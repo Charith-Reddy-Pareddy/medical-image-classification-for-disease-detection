@@ -3,7 +3,7 @@
 Built incrementally over about a week. Checked off as each day lands.
 
 - [x] **Day 1** — project scaffold, environment, Kaggle download instructions, README
-- [ ] **Day 2** — patient-level train/val/test split, label harmonization, Dataset/DataLoader
+- [x] **Day 2** — patient-level train/val/test split, label harmonization, Dataset/DataLoader
 - [ ] **Day 3** — baseline CNN (from scratch), training loop, metrics
 - [ ] **Day 4** — ResNet-50 and DenseNet-121 transfer learning
 - [ ] **Day 5** — bootstrapped CIs, McNemar's test, three-way domain-shift eval (Kaggle -> NIH -> CheXpert)
