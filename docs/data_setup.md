@@ -31,8 +31,16 @@ patient in both train and test.
 ## NIH ChestX-ray14 (external validation only)
 
 Download from https://nihcc.app.box.com/v/ChestXray-NIHCC and place under
-`data/nih_chestxray14/`, keeping `images/` and the `Data_Entry_2017.csv`
-metadata file. Never trained on — used only for out-of-domain evaluation.
+`data/nih_chestxray14/`, keeping `images/` (112,120 PNGs) and the
+`Data_Entry_2017_v2020.csv` metadata file (has the `Finding Labels` column
+`harmonize_nih()` expects). Never trained on — used only for out-of-domain
+evaluation.
+
+Note: the public Box folder has had spam PDFs ("AAA Job Opportunity...")
+uploaded alongside the real files by unrelated third parties — exclude
+anything not matching the official file list (images archives, CSVs,
+`README_CHESTXRAY.pdf`, `FAQ_CHESTXRAY.pdf`, `ARXIV_V5_CHESTXRAY.pdf`,
+`LOG_CHESTXRAY.pdf`, `batch_download_zips.py`) when extracting.
 
 ## VinDr-CXR (external validation only, replaces CheXpert)
 
