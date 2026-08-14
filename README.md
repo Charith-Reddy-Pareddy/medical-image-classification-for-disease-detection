@@ -12,7 +12,7 @@ protocol/scanner differences) rather than a vague "domain shift" excuse.
 - How accurately can CNN-based architectures detect pneumonia, and what
   drives misclassification?
 - How much does performance degrade across two independent external
-  datasets (NIH ChestX-ray14, CheXpert)?
+  datasets (NIH ChestX-ray14, VinDr-CXR)?
 - Do a custom CNN, ResNet-50, and DenseNet-121 differ meaningfully in
   sensitivity, specificity, and parameter efficiency?
 - Is the model looking at lung tissue, or at shortcut features (borders,
@@ -29,9 +29,13 @@ protocol/scanner differences) rather than a vague "domain shift" excuse.
   from filenames) before training, since the official split leaks patients
   across train/test.
 - **External validation only, never trained on**:
-  [NIH ChestX-ray14](https://nihcc.app.box.com/v/ChestXray-NIHCC),
-  [CheXpert](https://stanfordmlgroup.github.io/competitions/chexpert/)
-  (Stanford). Both adult population, different institutions.
+  [NIH ChestX-ray14](https://nihcc.app.box.com/v/ChestXray-NIHCC) and
+  [VinDr-CXR](https://www.kaggle.com/competitions/vinbigdata-chest-xray-abnormalities-detection)
+  (two Vietnamese hospitals). Both adult population, different institutions.
+  CheXpert was the original third site, but Stanford has since moved it
+  behind an institutional access agreement with no fixed approval
+  timeline — see [docs/data_setup.md](docs/data_setup.md) for details and
+  why VinDr-CXR replaces it.
 
 None of these datasets are committed to this repo — see
 [docs/data_setup.md](docs/data_setup.md) for how to fetch them.

@@ -34,9 +34,29 @@ Download from https://nihcc.app.box.com/v/ChestXray-NIHCC and place under
 `data/nih_chestxray14/`, keeping `images/` and the `Data_Entry_2017.csv`
 metadata file. Never trained on — used only for out-of-domain evaluation.
 
-## CheXpert (external validation only)
+## VinDr-CXR (external validation only, replaces CheXpert)
 
-Requires accepting Stanford's data-use agreement:
-https://stanfordmlgroup.github.io/competitions/chexpert/. Place under
-`data/chexpert/`, keeping the image directories and `train.csv`/`valid.csv`.
-Never trained on — used only for out-of-domain evaluation.
+The proposal originally called for CheXpert as the third site, but Stanford
+has since moved access behind an AIMI membership + signed Research
+Agreement (both requiring manual institutional review, no fixed timeline)
+— see https://stanford.redivis.com/datasets/5yyj-1a9f6ap0x. VinDr-CXR is
+used instead: 18,000 adult chest X-rays from two Vietnamese hospitals
+(Hospital 108, Hanoi Medical University Hospital), radiologist-labeled
+across 28 findings including Pneumonia — published in *Scientific Data*
+(https://www.nature.com/articles/s41597-022-01498-w). It still gives a
+third, independent institution for the domain-shift comparison, adult
+population same as the original CheXpert plan.
+
+```bash
+kaggle competitions download -c vinbigdata-chest-xray-abnormalities-detection -p data/
+```
+
+(Requires accepting the competition rules on the Kaggle site once, then
+the CLI download is immediate — no application/approval wait, unlike the
+official PhysioNet release of the same data, which is credentialed.)
+Place under `data/vindr_cxr/`, keeping the image directory and
+`train.csv` (or equivalent findings CSV). Never trained on — used only
+for out-of-domain evaluation.
+
+If CheXpert access is later approved, its harmonization can still be
+added back in `src/data/labels.py` alongside VinDr-CXR's.
