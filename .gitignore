@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.DS_Store
+.pytest_cache/
+.ipynb_checkpoints/
+
+# datasets and trained weights are large and not committed
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+
+# experiment outputs
+outputs/
+runs/
+*.log
