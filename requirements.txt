@@ -8,6 +8,8 @@ Pillow
 matplotlib
 grad-cam
 opencv-python-headless
+torchxrayvision
+scikit-image
 streamlit
 pytest
 tqdm
