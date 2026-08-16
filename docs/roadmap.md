@@ -7,7 +7,7 @@ Built incrementally over about a week. Checked off as each day lands.
 - [x] **Day 3** — baseline CNN (from scratch), training loop, metrics
 - [x] **Day 4** — ResNet-50 and DenseNet-121 transfer learning
 - [x] **Day 5** — bootstrapped CIs, McNemar's test, domain-shift eval harness (Kaggle -> NIH; VinDr-CXR pending download)
-- [ ] **Day 6** — Grad-CAM, quantitative shortcut-feature metric, error taxonomy
+- [x] **Day 6** — Grad-CAM, quantitative shortcut-feature metric, error taxonomy
 - [ ] **Day 7** — debugging exercise (intentional defects, diagnosis, fixes, regression tests)
 - [ ] **Day 8** — age-artifact causal analysis, Streamlit demo, results table, polish
 
