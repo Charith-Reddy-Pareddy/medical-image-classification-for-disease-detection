@@ -3,7 +3,7 @@
 Datasets are never committed to git (too large, and most require accepting
 a license/data-use agreement). This documents where each one goes.
 
-## Kaggle Chest X-Ray Images (Pneumonia)
+## Kaggle Chest X-Ray Images (Pneumonia) — downloaded, verified
 
 ```bash
 pip install kaggle
@@ -28,7 +28,7 @@ parsed from filenames (e.g. `person1946_bacteria_4874.jpeg` -> patient
 `src/data/split.py`, since the official split places images from the same
 patient in both train and test.
 
-## NIH ChestX-ray14 (external validation only)
+## NIH ChestX-ray14 (external validation only) — downloaded, verified
 
 Download from https://nihcc.app.box.com/v/ChestXray-NIHCC and place under
 `data/nih_chestxray14/`, keeping `images/` (112,120 PNGs) and the
@@ -42,7 +42,7 @@ anything not matching the official file list (images archives, CSVs,
 `README_CHESTXRAY.pdf`, `FAQ_CHESTXRAY.pdf`, `ARXIV_V5_CHESTXRAY.pdf`,
 `LOG_CHESTXRAY.pdf`, `batch_download_zips.py`) when extracting.
 
-## VinDr-CXR (external validation only, replaces CheXpert)
+## VinDr-CXR (external validation only, replaces CheXpert) — not yet downloaded
 
 The proposal originally called for CheXpert as the third site, but Stanford
 has since moved access behind an AIMI membership + signed Research

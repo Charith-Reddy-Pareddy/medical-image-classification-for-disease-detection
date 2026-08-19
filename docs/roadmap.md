@@ -9,6 +9,11 @@ Built incrementally over about a week. Checked off as each day lands.
 - [x] **Day 5** — bootstrapped CIs, McNemar's test, domain-shift eval harness (Kaggle -> NIH; VinDr-CXR pending download)
 - [x] **Day 6** — Grad-CAM, quantitative shortcut-feature metric, error taxonomy
 - [x] **Day 7** — debugging exercise (intentional defects, diagnosis, fixes, regression tests) — see [docs/debugging_exercise.md](debugging_exercise.md)
-- [ ] **Day 8** — age-artifact causal analysis, Streamlit demo, results table, polish
+- [x] **Day 8** — age-artifact causal analysis, Streamlit demo, results table, polish
+
+That's the full 8-day build. See [docs/results.md](results.md) for current
+numbers and the README's "Status" section for what's genuinely finished
+vs. what still needs a full training run (VinDr-CXR download, converged
+checkpoints for all three architectures).
 
 See the [README](../README.md) for the research questions this is answering.
