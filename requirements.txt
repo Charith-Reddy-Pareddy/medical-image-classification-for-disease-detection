@@ -10,6 +10,7 @@ grad-cam
 opencv-python-headless
 torchxrayvision
 scikit-image
+statsmodels
 streamlit
 pytest
 tqdm

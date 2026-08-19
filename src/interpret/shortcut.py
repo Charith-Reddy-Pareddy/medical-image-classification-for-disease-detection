@@ -68,12 +68,38 @@ def shortcut_metric_report(
     overlap and reports what fraction fall under overlap_cutoff -- the
     quantitative shortcut-learning signal from Experiment 8.
     """
+    records = per_image_overlaps(model, manifest_df, device, transform, n_samples, cam_threshold, seed)
+    if not records:
+        return {"n_correct": 0, "pct_under_cutoff": float("nan"), "mean_overlap": float("nan")}
+
+    overlaps_arr = np.array([r["overlap"] for r in records])
+    return {
+        "n_correct": len(records),
+        "pct_under_cutoff": float((overlaps_arr < overlap_cutoff).mean() * 100),
+        "mean_overlap": float(overlaps_arr.mean()),
+    }
+
+
+def per_image_overlaps(
+    model,
+    manifest_df,
+    device,
+    transform,
+    n_samples: int | None = None,
+    cam_threshold: float = 0.5,
+    seed: int = 42,
+) -> list:
+    """Per-image Grad-CAM/lung-mask overlap for correctly classified
+    examples. Returns a list of {"path", "overlap", "label"} dicts --
+    the shared building block behind shortcut_metric_report and the
+    Experiment 9 causal analysis.
+    """
     df = manifest_df
     if n_samples is not None and n_samples < len(df):
         df = df.sample(n=n_samples, random_state=seed).reset_index(drop=True)
 
     model.eval()
-    overlaps = []
+    records = []
     for _, row in df.iterrows():
         image = Image.open(row["path"]).convert("RGB")
         tensor = transform(image).to(device)
@@ -88,14 +114,7 @@ def shortcut_metric_report(
         mask_resized = cv2.resize(
             mask.astype(np.uint8), (cam.shape[1], cam.shape[0]), interpolation=cv2.INTER_NEAREST
         ).astype(bool)
-        overlaps.append(gradcam_overlap_fraction(cam, mask_resized, cam_threshold))
+        overlap = gradcam_overlap_fraction(cam, mask_resized, cam_threshold)
+        records.append({"path": row["path"], "overlap": overlap, "label": row["label"]})
 
-    if not overlaps:
-        return {"n_correct": 0, "pct_under_cutoff": float("nan"), "mean_overlap": float("nan")}
-
-    overlaps_arr = np.array(overlaps)
-    return {
-        "n_correct": len(overlaps),
-        "pct_under_cutoff": float((overlaps_arr < overlap_cutoff).mean() * 100),
-        "mean_overlap": float(overlaps_arr.mean()),
-    }
+    return records
