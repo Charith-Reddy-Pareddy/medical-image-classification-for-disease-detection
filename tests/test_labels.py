@@ -37,3 +37,20 @@ def test_harmonize_chexpert_uncertain_policies():
 
     ones = harmonize_chexpert(df, uncertain_policy="ones")
     assert ones["label"].tolist() == [1]
+
+
+def test_harmonize_chexpert_uncertain_ones_only_affects_uncertain_rows():
+    # an already-certain row alongside an uncertain one -- a regression
+    # that checks pneumonia == 1 instead of == -1 for the "ones" policy
+    # would happen to leave the certain row looking right, so it can't
+    # be caught by a single-row case alone
+    df = pd.DataFrame(
+        {
+            "Frontal/Lateral": ["Frontal", "Frontal"],
+            "Pneumonia": [1, -1],
+            "No Finding": [0, 0],
+        }
+    )
+    out = harmonize_chexpert(df, uncertain_policy="ones")
+    assert len(out) == 2
+    assert out["label"].tolist() == [1, 1]

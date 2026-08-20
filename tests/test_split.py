@@ -28,6 +28,14 @@ def test_same_patient_different_scans_share_id():
     assert a == b
 
 
+def test_parse_patient_id_five_digit_id():
+    # pins a longer id explicitly -- a regex narrowed to match only a
+    # single digit would silently fall through to the "unrecognized
+    # filename" fallback here instead of raising, so this needs an exact
+    # value check, not just "doesn't crash"
+    assert parse_patient_id("person12345_bacteria_1.jpeg") == "person12345"
+
+
 def _make_kaggle_dir(tmp_path):
     for split in ("train", "test", "val"):
         for cls in ("NORMAL", "PNEUMONIA"):
