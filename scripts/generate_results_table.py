@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import torch
 from torch.utils.data import DataLoader
 
-from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, NIH_DIR, ROOT, SEED
+from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, NIH_DIR, ROOT, SEED, get_device
 from src.data.dataset import ChestXrayDataset, get_transforms
 from src.data.nih import build_nih_manifest
 from src.data.split import build_manifest, patient_level_split
@@ -55,7 +55,7 @@ def render_markdown_table(all_results: dict) -> str:
 
 
 def main(batch_size: int, num_workers: int, nih_sample_size):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
     loaders = build_loaders(batch_size, num_workers, nih_sample_size)
 
     available_models = [name for name in MODEL_REGISTRY if (MODEL_DIR / f"{name}.pt").exists()]

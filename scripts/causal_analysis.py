@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch
 
-from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, NIH_DIR, SEED
+from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, NIH_DIR, SEED, get_device
 from src.data.dataset import get_transforms
 from src.data.nih import build_nih_manifest
 from src.data.split import build_manifest, patient_level_split
@@ -16,7 +16,7 @@ from src.models import MODEL_REGISTRY
 
 
 def main(model_name: str, kaggle_n: int, nih_n: int):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
 
     model = MODEL_REGISTRY[model_name]()
     model.load_state_dict(torch.load(MODEL_DIR / f"{model_name}.pt", map_location=device))

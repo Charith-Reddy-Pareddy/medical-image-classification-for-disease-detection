@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, SEED
+from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, SEED, get_device
 from src.data.dataset import ChestXrayDataset, get_transforms
 from src.data.split import assert_no_patient_leakage, build_manifest, patient_level_split
 from src.eval.metrics import compute_metrics
@@ -23,8 +23,8 @@ def get_dataloaders(batch_size: int):
     train_ds = ChestXrayDataset(train_df, transform=get_transforms(IMAGE_SIZE, train=True))
     val_ds = ChestXrayDataset(val_df, transform=get_transforms(IMAGE_SIZE, train=False))
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=2)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=6, persistent_workers=True)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=6, persistent_workers=True)
     return train_loader, val_loader
 
 
@@ -41,7 +41,7 @@ def evaluate(model, loader, device):
 
 
 def train(model_name: str, epochs: int, batch_size: int, lr: float):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
     torch.manual_seed(SEED)
 
     train_loader, val_loader = get_dataloaders(batch_size)

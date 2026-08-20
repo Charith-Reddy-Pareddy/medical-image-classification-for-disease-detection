@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 from pytorch_grad_cam.utils.image import show_cam_on_image
 
-from src.config import IMAGE_SIZE, MODEL_DIR
+from src.config import IMAGE_SIZE, MODEL_DIR, get_device
 from src.data.dataset import get_transforms
 from src.interpret.gradcam import compute_gradcam
 from src.models import MODEL_REGISTRY
@@ -25,7 +25,7 @@ st.caption(
 
 @st.cache_resource
 def load_model(model_name: str):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
     model = MODEL_REGISTRY[model_name]()
     ckpt_path = MODEL_DIR / f"{model_name}.pt"
     model.load_state_dict(torch.load(ckpt_path, map_location=device))

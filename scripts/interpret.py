@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import torch
 from torch.utils.data import DataLoader
 
-from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, SEED
+from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, SEED, get_device
 from src.data.dataset import ChestXrayDataset, get_transforms
 from src.data.split import build_manifest, patient_level_split
 from src.interpret.failure_taxonomy import build_failure_taxonomy
@@ -16,7 +16,7 @@ from src.models import MODEL_REGISTRY
 
 
 def main(model_name: str, n_samples: int | None):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
 
     model = MODEL_REGISTRY[model_name]()
     model.load_state_dict(torch.load(MODEL_DIR / f"{model_name}.pt", map_location=device))
