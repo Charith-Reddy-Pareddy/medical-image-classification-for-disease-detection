@@ -90,5 +90,5 @@ src/interpret/  Grad-CAM, shortcut metric, failure taxonomy, causal analysis
 app/            Streamlit inference demo
 scripts/        training / evaluation / interpretation entry points
 tests/          unit tests (pytest)
-docs/           roadmap, data setup, results, debugging exercise notes
+docs/           roadmap, data setup, results
 ```
