@@ -42,29 +42,41 @@ anything not matching the official file list (images archives, CSVs,
 `README_CHESTXRAY.pdf`, `FAQ_CHESTXRAY.pdf`, `ARXIV_V5_CHESTXRAY.pdf`,
 `LOG_CHESTXRAY.pdf`, `batch_download_zips.py`) when extracting.
 
-## VinDr-CXR (external validation only, replaces CheXpert) — not yet downloaded
+## Indiana University / OpenI (external validation only, replaces CheXpert) — downloaded, verified
 
-The proposal originally called for CheXpert as the third site, but Stanford
-has since moved access behind an AIMI membership + signed Research
-Agreement (both requiring manual institutional review, no fixed timeline)
-— see https://stanford.redivis.com/datasets/5yyj-1a9f6ap0x. VinDr-CXR is
-used instead: 18,000 adult chest X-rays from two Vietnamese hospitals
-(Hospital 108, Hanoi Medical University Hospital), radiologist-labeled
-across 28 findings including Pneumonia — published in *Scientific Data*
-(https://www.nature.com/articles/s41597-022-01498-w). It still gives a
-third, independent institution for the domain-shift comparison, adult
-population same as the original CheXpert plan.
+The proposal originally called for CheXpert as the third site; Stanford has
+since moved access behind an AIMI membership + signed Research Agreement
+(manual institutional review, no fixed timeline) — see
+https://stanford.redivis.com/datasets/5yyj-1a9f6ap0x. VinDr-CXR (Kaggle's
+`vinbigdata-chest-xray-abnormalities-detection` competition) was tried next,
+but ruled out on inspection: the competition repackaging is 142GB of raw
+DICOM (didn't fit available disk space) and, more fundamentally, its
+14-class taxonomy doesn't include a "Pneumonia" label at all (only the
+*original* VinDr-CXR research release's 28-label version does — a citation
+mismatch on my part when first proposing it).
+
+Indiana University Health's OpenI collection is used instead: 7,470 chest
+X-rays with radiology reports, MeSH-tagged, explicitly including a
+"Pneumonia" label — verified directly against `torchxrayvision`'s loader
+source and the raw XML reports before committing to it, not assumed from a
+paper abstract this time. Public, no access agreement, ~1.3GB total.
 
 ```bash
-kaggle competitions download -c vinbigdata-chest-xray-abnormalities-detection -p data/
+curl -L "https://openi.nlm.nih.gov/imgs/collections/NLMCXR_png.tgz" -o data/openi/NLMCXR_png.tgz
+curl -L "https://openi.nlm.nih.gov/imgs/collections/NLMCXR_reports.tgz" -o data/openi/NLMCXR_reports.tgz
+mkdir -p data/openi/images data/openi/reports
+tar -xzf data/openi/NLMCXR_png.tgz -C data/openi/images/
+tar -xzf data/openi/NLMCXR_reports.tgz -C data/openi/reports/
 ```
 
-(Requires accepting the competition rules on the Kaggle site once, then
-the CLI download is immediate — no application/approval wait, unlike the
-official PhysioNet release of the same data, which is credentialed.)
-Place under `data/vindr_cxr/`, keeping the image directory and
-`train.csv` (or equivalent findings CSV). Never trained on — used only
-for out-of-domain evaluation.
+Reports are per-patient XML files under `data/openi/reports/ecgen-radiology/`,
+each MeSH-tagged with curated ("major") and NLP-extracted ("automatic")
+terms; `src/data/openi.py` parses these and `harmonize_openi()` in
+`src/data/labels.py` applies label=1 if "pneumonia" is among the automatic
+tags, label=0 if the major tags are exactly "normal", excluding ambiguous
+cases otherwise — same policy as `harmonize_nih()`. 2,854 usable images
+after harmonization (2,696 normal / 158 pneumonia). Never trained on — used
+only for out-of-domain evaluation.
 
-If CheXpert access is later approved, its harmonization can still be
-added back in `src/data/labels.py` alongside VinDr-CXR's.
+If CheXpert access is later approved, its harmonization can still be added
+back in `src/data/labels.py` alongside OpenI's.

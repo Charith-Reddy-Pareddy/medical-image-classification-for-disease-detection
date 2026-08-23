@@ -12,7 +12,7 @@ protocol/scanner differences) rather than a vague "domain shift" excuse.
 - How accurately can CNN-based architectures detect pneumonia, and what
   drives misclassification?
 - How much does performance degrade across two independent external
-  datasets (NIH ChestX-ray14, VinDr-CXR)?
+  datasets (NIH ChestX-ray14, Indiana University/OpenI)?
 - Do a custom CNN, ResNet-50, and DenseNet-121 differ meaningfully in
   sensitivity, specificity, and parameter efficiency?
 - Is the model looking at lung tissue, or at shortcut features (borders,
@@ -30,12 +30,14 @@ protocol/scanner differences) rather than a vague "domain shift" excuse.
   across train/test.
 - **External validation only, never trained on**:
   [NIH ChestX-ray14](https://nihcc.app.box.com/v/ChestXray-NIHCC) and
-  [VinDr-CXR](https://www.kaggle.com/competitions/vinbigdata-chest-xray-abnormalities-detection)
-  (two Vietnamese hospitals). Both adult population, different institutions.
-  CheXpert was the original third site, but Stanford has since moved it
-  behind an institutional access agreement with no fixed approval
-  timeline — see [docs/data_setup.md](docs/data_setup.md) for details and
-  why VinDr-CXR replaces it.
+  [Indiana University/OpenI](https://openi.nlm.nih.gov/faq). Both adult
+  population, different institutions from each other and from Kaggle's
+  pediatric single-site training data. CheXpert was the original third
+  site, but Stanford has since moved it behind an institutional access
+  agreement with no fixed approval timeline; VinDr-CXR was tried next but
+  ruled out (142GB, and its Kaggle-competition packaging turned out not to
+  include a Pneumonia label) — see [docs/data_setup.md](docs/data_setup.md)
+  for the full story.
 
 None of these datasets are committed to this repo — see
 [docs/data_setup.md](docs/data_setup.md) for how to fetch them.
@@ -43,12 +45,13 @@ None of these datasets are committed to this repo — see
 ## Status
 
 The full pipeline (data, models, training, domain-shift eval, Grad-CAM,
-shortcut metric, causal analysis, demo) is built, tested (50 tests), and
-runs end-to-end on real data. What it's *not* yet: the checkpoints
-committed results are trained from a quick 3-epoch demo run, not a
-converged final model, and VinDr-CXR (the third domain-shift site) isn't
-downloaded yet -- domain-shift numbers so far are Kaggle vs. NIH only.
-See [docs/roadmap.md](docs/roadmap.md) for the day-by-day build log and
+shortcut metric, causal analysis, demo) is built, tested (52 tests), and
+runs end-to-end on real data. All three architectures are properly
+trained (baseline_cnn: 20 epochs, ResNet-50/DenseNet-121: 10 epochs each,
+MPS-accelerated), and the three-way domain-shift comparison the proposal
+originally called for (Kaggle -> NIH -> OpenI) is complete. Causal
+analysis has been run for all three architectures. See
+[docs/roadmap.md](docs/roadmap.md) for the day-by-day build log and
 [docs/results.md](docs/results.md) for the latest auto-generated numbers.
 
 ## Running it
@@ -62,7 +65,7 @@ bash scripts/download_kaggle.sh
 # 2. train a model (baseline_cnn / resnet50 / densenet121)
 python scripts/train.py --model baseline_cnn --epochs 5
 
-# 3. evaluate across Kaggle + NIH, with bootstrapped CIs
+# 3. evaluate across Kaggle + NIH + OpenI, with bootstrapped CIs
 python scripts/evaluate_domain_shift.py --model baseline_cnn
 
 # 4. Grad-CAM, shortcut metric, false-negative taxonomy
