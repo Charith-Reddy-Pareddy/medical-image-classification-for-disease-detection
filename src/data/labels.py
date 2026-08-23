@@ -24,6 +24,29 @@ def harmonize_nih(df: pd.DataFrame) -> pd.DataFrame:
     return out.dropna(subset=["label"]).astype({"label": int})
 
 
+def harmonize_openi(df: pd.DataFrame) -> pd.DataFrame:
+    """Indiana University/OpenI reports are tagged with MeSH terms split
+    into curated ("major") and NLP-extracted ("automatic") tags, joined
+    here as pipe-delimited lowercase strings per report -- matches
+    torchxrayvision's Openi_Dataset convention, which this follows rather
+    than reinventing the parsing. label=1 if "pneumonia" appears among the
+    automatic tags; label=0 if the major tags are exactly "normal" (the
+    clean negative). Anything else (another finding, no pneumonia
+    mentioned) is an ambiguous negative, excluded -- same policy as
+    harmonize_nih.
+    """
+    out = df.copy()
+    has_pneumonia = out["labels_automatic"].str.contains("pneumonia", na=False)
+    is_normal = out["labels_major"] == "normal"
+
+    label = pd.Series(pd.NA, index=out.index, dtype="Int64")
+    label[has_pneumonia] = 1
+    label[~has_pneumonia & is_normal] = 0
+
+    out = out.assign(label=label)
+    return out.dropna(subset=["label"]).astype({"label": int})
+
+
 def harmonize_chexpert(df: pd.DataFrame, uncertain_policy: str = "ignore") -> pd.DataFrame:
     """CheXpert's Pneumonia column is 1 / 0 / -1 (uncertain) / NaN (unmentioned).
 

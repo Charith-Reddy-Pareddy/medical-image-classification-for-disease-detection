@@ -8,9 +8,10 @@ import torch
 from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader
 
-from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, NIH_DIR, SEED, get_device
+from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, NIH_DIR, OPENI_DIR, SEED, get_device
 from src.data.dataset import ChestXrayDataset, get_transforms
 from src.data.nih import build_nih_manifest
+from src.data.openi import build_openi_manifest
 from src.data.split import build_manifest as build_kaggle_manifest
 from src.data.split import patient_level_split
 from src.eval.domain_shift import evaluate_across_datasets
@@ -28,9 +29,13 @@ def build_eval_loaders(batch_size: int, num_workers: int, nih_sample_size: int |
         nih_manifest = nih_manifest.sample(n=nih_sample_size, random_state=seed).reset_index(drop=True)
     nih_ds = ChestXrayDataset(nih_manifest, transform=get_transforms(IMAGE_SIZE, train=False))
 
+    openi_manifest = build_openi_manifest(OPENI_DIR)
+    openi_ds = ChestXrayDataset(openi_manifest, transform=get_transforms(IMAGE_SIZE, train=False))
+
     return {
         "kaggle_test": DataLoader(kaggle_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
         "nih": DataLoader(nih_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
+        "openi": DataLoader(openi_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
     }
 
 
