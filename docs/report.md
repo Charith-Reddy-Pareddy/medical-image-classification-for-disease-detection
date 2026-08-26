@@ -15,14 +15,36 @@ shortcut-learning behavior in COVID-19 chest X-ray classifiers.
 
 This project is a targeted replication and extension of that
 generalization-failure literature. Three architectures — a custom CNN
-trained from scratch, a fine-tuned ResNet-50, and a fine-tuned DenseNet-121
-— were trained on a single-institution pediatric dataset (Kaggle's Chest
-X-Ray Images) and evaluated, without retraining, on two independent
-adult-population external sites (NIH ChestX-ray14 and Indiana
-University/OpenI). The central question isn't "how accurate is the model,"
-but *why* accuracy collapses under domain shift, and whether that collapse
-is explained by a specific, testable mechanism rather than treated as an
-unexplained black box.
+trained from scratch, a fine-tuned ResNet-50 (He et al., 2016), and a
+fine-tuned DenseNet-121 (Huang et al., 2017) — were trained on a
+single-institution pediatric dataset (Kaggle's Chest X-Ray Images) and
+evaluated, without retraining, on two independent adult-population external
+sites (NIH ChestX-ray14 and Indiana University/OpenI). The central question
+isn't "how accurate is the model," but *why* accuracy collapses under
+domain shift, and whether that collapse is explained by a specific,
+testable mechanism rather than treated as an unexplained black box.
+
+### 1.1 Related work
+
+This project sits at the intersection of four literatures. **Architecture**:
+ResNet (He et al., 2016) and DenseNet (Huang et al., 2017) are the two
+transfer-learning backbones evaluated here, chosen because they represent
+distinct design philosophies — residual connections versus dense feature
+reuse — that could plausibly generalize differently under domain shift.
+**Generalization failure**: Zech et al. (2018) and DeGrave et al. (2021),
+discussed above, motivate the entire premise. **Interpretability**: Grad-CAM
+(Selvaraju et al., 2017) is the attention-visualization method underlying
+every Grad-CAM figure and the quantitative shortcut metric in this report;
+the shortcut metric's contribution is comparing that attention against a
+segmentation ground truth across a full test set, rather than presenting a
+gallery of hand-picked heatmaps as qualitative evidence. **Algorithmic
+fairness in healthcare**: Obermeyer et al. (2019) showed a widely deployed
+healthcare risk-prediction algorithm exhibited significant racial bias
+because it used healthcare cost as a proxy for healthcare need — a
+different mechanism than shortcut learning, but the same underlying lesson:
+a model's measured performance metric can look acceptable while the
+mechanism producing it is not clinically trustworthy, and only a targeted
+audit surfaces the difference. See §10 for full references.
 
 ## 2. Research questions
 
@@ -154,17 +176,21 @@ The headline result. All three models were run, unmodified, across Kaggle
 
 ![Domain shift AUC-ROC by architecture and site](report_assets/hero_domain_shift_auc.png)
 
-| Model | Dataset | n | Accuracy | Recall | AUC-ROC |
-|---|---|---|---|---|---|
-| Baseline CNN | Kaggle | 880 | 0.936 | 0.940 | 0.975 |
-| Baseline CNN | NIH | 4,000 | 0.466 | 0.720 | 0.620 |
-| Baseline CNN | OpenI | 2,854 | 0.300 | 0.810 | 0.512 |
-| ResNet-50 | Kaggle | 880 | 0.972 | 0.990 | 0.992 |
-| ResNet-50 | NIH | 4,000 | 0.336 | 0.890 | 0.707 |
-| ResNet-50 | OpenI | 2,854 | 0.286 | 0.861 | 0.575 |
-| DenseNet-121 | Kaggle | 880 | 0.964 | 0.984 | 0.991 |
-| DenseNet-121 | NIH | 4,000 | 0.360 | 0.841 | 0.679 |
-| DenseNet-121 | OpenI | 2,854 | 0.260 | 0.886 | 0.591 |
+| Model | Dataset | n | Accuracy | Recall | AUC-ROC | AUC-ROC 95% CI | Sensitivity 95% CI |
+|---|---|---|---|---|---|---|---|
+| Baseline CNN | Kaggle | 880 | 0.936 | 0.940 | 0.975 | 0.963–0.986 | 0.920–0.958 |
+| Baseline CNN | NIH | 4,000 | 0.466 | 0.720 | 0.620 | 0.561–0.676 | 0.621–0.812 |
+| Baseline CNN | OpenI | 2,854 | 0.300 | 0.810 | 0.512 | 0.469–0.556 | 0.750–0.873 |
+| ResNet-50 | Kaggle | 880 | 0.972 | 0.990 | 0.992 | 0.984–0.997 | 0.982–0.997 |
+| ResNet-50 | NIH | 4,000 | 0.336 | 0.890 | 0.707 | 0.653–0.759 | 0.822–0.952 |
+| ResNet-50 | OpenI | 2,854 | 0.286 | 0.861 | 0.575 | 0.536–0.617 | 0.807–0.915 |
+| DenseNet-121 | Kaggle | 880 | 0.964 | 0.984 | 0.991 | 0.986–0.995 | 0.973–0.993 |
+| DenseNet-121 | NIH | 4,000 | 0.360 | 0.841 | 0.679 | 0.618–0.733 | 0.757–0.917 |
+| DenseNet-121 | OpenI | 2,854 | 0.260 | 0.886 | 0.591 | 0.551–0.633 | 0.839–0.933 |
+
+*95% CIs are bootstrapped (1,000 resamples). Note the baseline CNN's
+OpenI AUC-ROC interval (0.469–0.556) straddles 0.5 — its performance
+there is not reliably distinguishable from chance, not merely close to it.*
 
 Two things stand out. First, accuracy collapses on both external sites
 while recall stays high — the signature of models calibrated to Kaggle's
@@ -392,3 +418,23 @@ evidence for a testable causal mechanism over a black-box excuse, and a
 concrete illustration of why single-site validation is insufficient
 grounds for clinical deployment of any of the three architectures
 evaluated here.
+
+## 10. References
+
+1. DeGrave, A. J., Janizek, J. D., & Lee, S.-I. (2021). AI for radiographic
+   COVID-19 detection selects shortcuts over signal. *Nature Machine
+   Intelligence*, 3, 610–619.
+2. He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for
+   image recognition. *CVPR 2016*.
+3. Huang, G., Liu, Z., van der Maaten, L., & Weinberger, K. Q. (2017).
+   Densely connected convolutional networks. *CVPR 2017*.
+4. Obermeyer, Z., Powers, B., Vogeli, C., & Mullainathan, S. (2019).
+   Dissecting racial bias in an algorithm used to manage the health of
+   populations. *Science*, 366(6464), 447–453.
+5. Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &
+   Batra, D. (2017). Grad-CAM: Visual explanations from deep networks via
+   gradient-based localization. *ICCV 2017*.
+6. Zech, J. R., Badgeley, M. A., Liu, M., Costa, A. B., Titano, J. J., &
+   Oermann, E. K. (2018). Variable generalization performance of a deep
+   learning model to detect pneumonia in chest radiographs: a
+   cross-sectional study. *PLOS Medicine*, 15(11), e1002683.
