@@ -3,6 +3,33 @@
 *A pneumonia classifier that scores well in the hospital it was trained in
 and shows, quantitatively, why it should not be trusted anywhere else.*
 
+## Executive summary
+
+Three architectures — a from-scratch CNN, ResNet-50, and DenseNet-121 —
+were trained on a single-institution pediatric pneumonia dataset (Kaggle,
+n=5,856) and evaluated, without retraining, on two independent
+adult-population external sites (NIH ChestX-ray14, Indiana
+University/OpenI). Both transfer-learning models significantly outperform
+the from-scratch baseline in-domain (McNemar's p<0.001; AUC-ROC 0.975 for
+the baseline vs. 0.991–0.992 for the transfer models), but that edge does
+not survive domain shift: all three models
+degrade substantially and non-uniformly on external data, with the
+baseline CNN's OpenI AUC-ROC (0.512, 95% CI 0.469–0.556) statistically
+indistinguishable from chance. A quantitative Grad-CAM audit against a
+pretrained lung-segmentation model finds that 74–81% of *correctly*
+classified cases across all three architectures show below-threshold
+overlap with actual lung tissue — shortcut reliance is the median
+behavior, not a tail risk — illustrated by a case where a model predicts
+pneumonia with 100% confidence while attending entirely to a corner
+laterality marker. A causal analysis (logistic regression) finds that
+shortcut reliance is not consistently explained by pediatric-vs-adult age
+group across architectures; where it is explained at all, it tracks image
+resolution and detected scanner artifacts — measurable, mechanistic
+proxies, not an unexplained institutional label. The practical conclusion:
+none of these models should be deployed autonomously outside a population
+resembling their training data, and single-site external validation is not
+sufficient grounds for a clinical deployment decision.
+
 ## 1. Overview and relevance
 
 Deep learning models for medical imaging routinely reach high in-distribution
