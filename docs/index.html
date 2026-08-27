@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chest X-Ray Domain-Shift &amp; Shortcut-Learning Audit</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; /* baseline CNN */
+    --series-2: #eb6834; /* ResNet-50 */
+    --series-3: #1baf7a; /* DenseNet-121 */
+    --critical: #d03b3b;
+    --critical-text: #d03b3b;
+    --good-text: #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --critical-text: #e66767;
+      --good-text: #0ca30c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --page: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --critical-text: #e66767;
+    --good-text: #0ca30c;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header { margin-bottom: 32px; }
+  .kicker {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--text-secondary); text-transform: uppercase; margin: 0 0 8px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 36px); margin: 0 0 12px; line-height: 1.2; }
+  .tagline { color: var(--text-secondary); max-width: 68ch; margin: 0; font-size: 16px; }
+  .links { margin-top: 16px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .links a {
+    color: var(--series-1); text-decoration: none; font-size: 14px; font-weight: 600;
+  }
+  .links a:hover { text-decoration: underline; }
+
+  section { margin: 48px 0; }
+  h2 {
+    font-size: 20px; margin: 0 0 4px; font-weight: 700;
+  }
+  .section-sub { color: var(--text-secondary); font-size: 14px; margin: 0 0 20px; }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .stat-tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .stat-tile .label { font-size: 13px; color: var(--text-secondary); margin: 0 0 8px; }
+  .stat-tile .value { font-size: 34px; font-weight: 600; margin: 0; }
+  .stat-tile .value.critical { color: var(--critical-text); }
+  .stat-tile .sub { font-size: 12.5px; color: var(--text-muted); margin: 8px 0 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.num, th.num { font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+  .sig { color: var(--critical-text); font-weight: 600; }
+
+  .legend { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  .bm-row { display: grid; grid-template-columns: 130px 1fr 170px; align-items: center; gap: 12px; margin: 14px 0; font-size: 14px; }
+  .bm-track { background: var(--grid); border-radius: 4px; height: 20px; position: relative; }
+  .bm-fill { height: 20px; border-radius: 4px; }
+  .bm-label { color: var(--text-secondary); font-size: 13px; }
+
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .gallery figure { margin: 0; background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .gallery img { width: 100%; display: block; }
+  .gallery figcaption { padding: 14px 16px; font-size: 13px; color: var(--text-secondary); }
+  .gallery figcaption b { color: var(--text-primary); }
+
+  .tooltip {
+    position: absolute; background: var(--text-primary); color: var(--surface-1);
+    font-size: 12px; padding: 6px 10px; border-radius: 6px; pointer-events: none;
+    opacity: 0; transition: opacity 0.1s; white-space: nowrap; transform: translate(-50%, -100%);
+  }
+
+  footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px; }
+  footer a { color: var(--text-secondary); }
+
+  @media (max-width: 640px) {
+    .bm-row { grid-template-columns: 100px 1fr; }
+    .bm-row .bm-label-value { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="kicker">Honors case study</p>
+    <h1>Chest X-Ray Domain-Shift &amp; Shortcut-Learning Audit</h1>
+    <p class="tagline">
+      A pneumonia classifier that scores well in the hospital it was trained
+      in — and a quantitative audit of why it shouldn't be trusted anywhere
+      else. Three architectures, trained on one pediatric institution, tested
+      without retraining on two independent adult-population sites.
+    </p>
+    <div class="links">
+      <a href="https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection">Repository →</a>
+      <a href="https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection/blob/main/docs/report.md">Full written report →</a>
+      <a href="https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection/blob/main/docs/results.md">Raw results table →</a>
+    </div>
+  </header>
+
+  <section>
+    <h2>Headline finding</h2>
+    <p class="section-sub">All three models trained on Kaggle, evaluated unmodified on two external sites</p>
+    <div class="stat-grid">
+      <div class="stat-tile">
+        <p class="label">Best in-domain AUC-ROC</p>
+        <p class="value">0.992</p>
+        <p class="sub">ResNet-50, Kaggle test set (n=880)</p>
+      </div>
+      <div class="stat-tile">
+        <p class="label">Worst external AUC-ROC</p>
+        <p class="value critical">0.512</p>
+        <p class="sub">Baseline CNN on OpenI — 95% CI 0.469–0.556, indistinguishable from chance</p>
+      </div>
+      <div class="stat-tile">
+        <p class="label">Correct predictions not looking at lungs</p>
+        <p class="value critical">74–81%</p>
+        <p class="sub">Grad-CAM vs. lung-segmentation overlap, all 3 architectures</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>In-domain performance</h2>
+    <p class="section-sub">Held-out Kaggle test set, patient-level split, n=880 — McNemar's test confirms transfer learning wins (p&lt;0.001), but ResNet-50 vs. DenseNet-121 is not significant (p=0.19)</p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Model</th><th class="num">Accuracy</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">AUC-ROC</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Baseline CNN (from scratch)</td><td class="num">0.936</td><td class="num">0.968</td><td class="num">0.940</td><td class="num">0.975</td></tr>
+          <tr><td>ResNet-50 (transfer)</td><td class="num">0.972</td><td class="num">0.970</td><td class="num">0.990</td><td class="num">0.992</td></tr>
+          <tr><td>DenseNet-121 (transfer)</td><td class="num">0.964</td><td class="num">0.965</td><td class="num">0.984</td><td class="num">0.991</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Domain shift: AUC-ROC by site</h2>
+    <p class="section-sub">Same trained models, no retraining, evaluated on NIH ChestX-ray14 and Indiana University/OpenI</p>
+    <div class="card">
+      <svg id="domain-chart" width="720" height="340" viewBox="0 0 720 340" style="width:100%; height:auto; overflow: visible;" role="img" aria-label="Grouped bar chart of AUC-ROC by model and dataset"></svg>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--series-1)"></span>Baseline CNN</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--series-2)"></span>ResNet-50</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--series-3)"></span>DenseNet-121</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quantitative shortcut metric</h2>
+    <p class="section-sub">Grad-CAM attention vs. a pretrained lung-segmentation model, full test set</p>
+    <div class="stat-grid" style="margin-bottom:20px;">
+      <div class="stat-tile">
+        <p class="label">Mean Grad-CAM / lung overlap</p>
+        <p class="value">12–16%</p>
+        <p class="sub">Across all 3 models — near-100% would mean genuine lung-focused attention</p>
+      </div>
+      <div class="stat-tile">
+        <p class="label">Cases under 30% overlap cutoff</p>
+        <p class="value">74–81%</p>
+        <p class="sub">Of correctly classified cases — shortcut reliance is the median case</p>
+      </div>
+    </div>
+    <div class="card">
+      <p class="section-sub" style="margin:0 0 16px;">Border/text-region masking — accuracy drop when the outer 10% is blanked</p>
+      <div class="bm-row"><div class="bm-label">Baseline CNN</div><div class="bm-track"><div class="bm-fill" style="width:98%; background:var(--critical-text)"></div></div><div class="bm-label-value">&minus;14.7 pts (0.913→0.767)</div></div>
+      <div class="bm-row"><div class="bm-label">ResNet-50</div><div class="bm-track"><div class="bm-fill" style="width:8.7%; background:var(--series-1)"></div></div><div class="bm-label-value">&minus;1.3 pts (0.967→0.953)</div></div>
+      <div class="bm-row"><div class="bm-label">DenseNet-121</div><div class="bm-track"><div class="bm-fill" style="width:22%; background:var(--series-1)"></div></div><div class="bm-label-value">&minus;3.3 pts (0.980→0.947)</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Negative case: maximum confidence, maximum wrong</h2>
+    <p class="section-sub">A true-normal chest X-ray predicted pneumonia at p=1.00 — attention sits entirely on a corner laterality marker, not lung tissue</p>
+    <div class="gallery">
+      <figure>
+        <img src="report_assets/baseline_cnn_misclassified_3_true-NORMAL_pred-PNEUMONIA_p1.00.png" alt="Grad-CAM negative case: true normal predicted pneumonia at p=1.00, attention on the R laterality marker" loading="lazy" />
+        <figcaption><b>Truth: NORMAL — Predicted: PNEUMONIA (p=1.00).</b> Grad-CAM attention sits on the "R" marker in the top-left corner, not the lungs.</figcaption>
+      </figure>
+      <figure>
+        <img src="report_assets/baseline_cnn_misclassified_1_true-PNEUMONIA_pred-NORMAL_p0.34.png" alt="Grad-CAM false negative case, true pneumonia predicted normal" loading="lazy" />
+        <figcaption><b>Truth: PNEUMONIA — Predicted: NORMAL (p=0.34).</b> Attention concentrates on the image corners and inferior field boundary, not the visible opacity.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Age-artifact causal analysis</h2>
+    <p class="section-sub"><code>shortcut_driven ~ age_group + log(image area) + aspect ratio + text-marker proxy</code> — is shortcut reliance explained by pediatric-vs-adult age, or a more measurable proxy?</p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Model</th><th class="num">n</th><th>age_group</th><th>resolution</th><th>text marker</th><th>overall model</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Baseline CNN</td><td class="num">60</td><td>n.s. (p=0.54)</td><td class="sig">sig. (p=0.04)</td><td>n.s. (p=0.52)</td><td>—</td></tr>
+          <tr><td>ResNet-50</td><td class="num">188</td><td class="sig">sig. (p=0.02)</td><td class="sig">sig. (p=0.01)</td><td class="sig">sig. (p=0.04)</td><td>p=1.4×10⁻¹¹</td></tr>
+          <tr><td>DenseNet-121</td><td class="num">194</td><td>n.s. (p=0.36)</td><td>n.s. (p=0.11)</td><td>n.s. (p=0.28)</td><td>p=6.1×10⁻¹⁸</td></tr>
+        </tbody>
+      </table>
+      <p class="section-sub" style="margin-top:16px; margin-bottom:0;">"Age group" is not a consistent predictor of shortcut reliance across architectures. Where a factor is significant, it's resolution and/or detected artifacts — measurable proxies, not an unexplained institutional label.</p>
+    </div>
+  </section>
+
+  <footer>
+    Built from real trained checkpoints and real evaluation runs — no numbers on this page are estimated or illustrative.
+    Full methodology, limitations, and references in the <a href="https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection/blob/main/docs/report.md">written report</a>.
+    Source: <a href="https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection">GitHub repository</a>.
+  </footer>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function () {
+  const data = {
+    categories: ["Kaggle\n(in-domain)", "NIH\n(external)", "OpenI\n(external)"],
+    series: [
+      { name: "Baseline CNN", color: "var(--series-1)", values: [0.975, 0.620, 0.512] },
+      { name: "ResNet-50", color: "var(--series-2)", values: [0.992, 0.707, 0.575] },
+      { name: "DenseNet-121", color: "var(--series-3)", values: [0.991, 0.679, 0.591] },
+    ],
+  };
+
+  const svg = document.getElementById("domain-chart");
+  const tooltip = document.getElementById("tooltip");
+  const W = 720, H = 340;
+  const marginL = 40, marginR = 10, marginT = 10, marginB = 44;
+  const plotW = W - marginL - marginR;
+  const plotH = H - marginT - marginB;
+  const yMin = 0.4, yMax = 1.0;
+
+  function yPos(v) {
+    return marginT + plotH * (1 - (v - yMin) / (yMax - yMin));
+  }
+
+  const ns = "http://www.w3.org/2000/svg";
+  function el(tag, attrs) {
+    const e = document.createElementNS(ns, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // gridlines + y labels
+  const ticks = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+  ticks.forEach((t) => {
+    const y = yPos(t);
+    svg.appendChild(el("line", { x1: marginL, x2: W - marginR, y1: y, y2: y, stroke: "var(--grid)", "stroke-width": 1 }));
+    const label = el("text", { x: marginL - 8, y: y + 4, "text-anchor": "end", "font-size": 11, fill: "var(--text-muted)" });
+    label.textContent = t.toFixed(1);
+    svg.appendChild(label);
+  });
+  // baseline axis
+  svg.appendChild(el("line", { x1: marginL, x2: W - marginR, y1: marginT + plotH, y2: marginT + plotH, stroke: "var(--axis)", "stroke-width": 1 }));
+
+  const groupW = plotW / data.categories.length;
+  const barGap = 4;
+  const barW = Math.min(24, (groupW - barGap * (data.series.length + 1)) / data.series.length);
+
+  data.categories.forEach((cat, ci) => {
+    const groupX = marginL + ci * groupW;
+    const totalBarsW = barW * data.series.length + barGap * (data.series.length - 1);
+    const startX = groupX + (groupW - totalBarsW) / 2;
+
+    data.series.forEach((s, si) => {
+      const v = s.values[ci];
+      const x = startX + si * (barW + barGap);
+      const y = yPos(v);
+      const h = marginT + plotH - y;
+      const rect = el("rect", {
+        x, y, width: barW, height: h, rx: 4, ry: 4,
+        fill: s.color,
+      });
+      rect.addEventListener("mousemove", (e) => {
+        tooltip.style.opacity = 1;
+        tooltip.style.left = e.pageX + "px";
+        tooltip.style.top = e.pageY - 10 + "px";
+        tooltip.textContent = `${s.name} · ${cat.replace("\n", " ")}: ${v.toFixed(3)}`;
+      });
+      rect.addEventListener("mouseleave", () => { tooltip.style.opacity = 0; });
+      svg.appendChild(rect);
+    });
+
+    // category label (two lines)
+    const lines = cat.split("\n");
+    lines.forEach((line, li) => {
+      const t = el("text", {
+        x: groupX + groupW / 2, y: marginT + plotH + 18 + li * 13,
+        "text-anchor": "middle", "font-size": 12, fill: "var(--text-secondary)",
+      });
+      t.textContent = line;
+      svg.appendChild(t);
+    });
+  });
+
+  // y-axis title
+  const yTitleX = 14, yTitleY = marginT + plotH / 2;
+  const yTitle = el("text", {
+    x: yTitleX, y: yTitleY, "text-anchor": "middle",
+    "font-size": 11, fill: "var(--text-muted)",
+    transform: `rotate(-90, ${yTitleX}, ${yTitleY})`,
+  });
+  yTitle.textContent = "AUC-ROC";
+  svg.appendChild(yTitle);
+
+  // chance line at 0.5
+  const chanceY = yPos(0.5);
+  const chanceLine = el("line", { x1: marginL, x2: W - marginR, y1: chanceY, y2: chanceY, stroke: "var(--critical-text)", "stroke-width": 1, "stroke-dasharray": "4,3" });
+  svg.appendChild(chanceLine);
+  const chanceLabel = el("text", { x: W - marginR, y: chanceY - 6, "text-anchor": "end", "font-size": 10.5, fill: "var(--critical-text)" });
+  chanceLabel.textContent = "chance (0.5)";
+  svg.appendChild(chanceLabel);
+})();
+</script>
+</body>
+</html>
