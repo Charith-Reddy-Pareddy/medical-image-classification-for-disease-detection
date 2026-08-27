@@ -6,6 +6,14 @@ accurate is it," but *why* it fails once it leaves the hospital it was
 trained in, and whether that failure is a testable mechanism or a vague
 "domain shift" excuse.
 
+## Research questions
+
+- How accurately do CNN architectures detect pneumonia, and what drives misclassification?
+- How much does performance degrade across two independent external datasets?
+- Do a custom CNN, ResNet-50, and DenseNet-121 differ meaningfully in generalization?
+- Is the model attending to lung tissue, or exploiting shortcut features — measured quantitatively, not eyeballed?
+- Does shortcut reliance track pediatric-vs-adult imaging protocol, or a more directly measurable proxy?
+
 ## Data
 
 - **Training**: [Kaggle Chest X-Ray Images (Pneumonia)](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia) — pediatric, single institution, re-split at the **patient level**.
