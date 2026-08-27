@@ -1,5 +1,7 @@
 # Chest X-Ray Domain-Shift & Shortcut-Learning Audit
 
+**[Live results dashboard →](https://charith-reddy-pareddy.github.io/medical-image-classification-for-disease-detection/)**
+
 Pneumonia detection trained on a single-institution pediatric dataset and
 stress-tested on two independent adult-population datasets — not just "how
 accurate is it," but *why* it fails once it leaves the hospital it was
