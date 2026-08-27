@@ -1,5 +1,8 @@
 # Chest X-Ray Domain-Shift & Shortcut-Learning Audit
 
+[![tests](https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection/actions/workflows/tests.yml/badge.svg)](https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **[Live results dashboard →](https://charith-reddy-pareddy.github.io/medical-image-classification-for-disease-detection/)**
 
 Pneumonia detection trained on a single-institution pediatric dataset and
