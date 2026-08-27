@@ -6,6 +6,29 @@ accurate is it," but *why* it fails once it leaves the hospital it was
 trained in, and whether that failure is a testable mechanism or a vague
 "domain shift" excuse.
 
+## Results
+
+Pneumonia vs. normal, binary classification. In-domain (Kaggle, held-out
+patient-level test set, n=880):
+
+| Model | Accuracy | Precision | Recall | AUC-ROC |
+|---|---|---|---|---|
+| Baseline CNN (from scratch) | 93.6% | 96.8% | 94.0% | 0.975 |
+| ResNet-50 (transfer) | **97.2%** | 97.0% | 99.0% | **0.992** |
+| DenseNet-121 (transfer) | 96.4% | 96.5% | 98.4% | 0.991 |
+
+That accuracy does not survive leaving the hospital it was trained in —
+this is the actual point of the project:
+
+![Domain shift AUC-ROC by architecture and site](docs/report_assets/hero_domain_shift_auc.png)
+
+Baseline CNN's AUC-ROC on the OpenI external site is 0.512 (95% CI
+0.469–0.556) — statistically indistinguishable from a coin flip. Full
+numbers with confidence intervals: [docs/results.md](docs/results.md).
+Full writeup, including *why* it fails (a quantitative Grad-CAM audit finds
+74–81% of even *correct* predictions aren't looking at the lungs):
+[docs/report.md](docs/report.md).
+
 ## Research questions
 
 - How accurately do CNN architectures detect pneumonia, and what drives misclassification?
