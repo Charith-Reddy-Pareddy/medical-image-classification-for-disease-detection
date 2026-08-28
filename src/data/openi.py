@@ -14,14 +14,14 @@ def _parse_reports(reports_dir: Path) -> pd.DataFrame:
         automatics = sorted({node.text.lower() for node in root.findall(".//MeSH/automatic") if node.text})
         labels_major = "|".join(majors)
         labels_automatic = "|".join(automatics)
-        for image in root.findall(".//parentImage"):
-            rows.append(
-                {
-                    "imageid": image.attrib["id"],
-                    "labels_major": labels_major,
-                    "labels_automatic": labels_automatic,
-                }
-            )
+        rows.extend(
+            {
+                "imageid": image.attrib["id"],
+                "labels_major": labels_major,
+                "labels_automatic": labels_automatic,
+            }
+            for image in root.findall(".//parentImage")
+        )
     return pd.DataFrame(rows, columns=["imageid", "labels_major", "labels_automatic"])
 
 

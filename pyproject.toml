@@ -4,3 +4,7 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "BLE", "PERF", "RUF"]
+# line length is a formatter's job, not a linter's -- ruff excludes it by
+# default for the same reason; test fixture literals in particular read
+# better as one line than force-wrapped
+ignore = ["E501"]
