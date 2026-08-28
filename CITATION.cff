@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: If you use this work, please cite it as below.
+title: "Chest X-Ray Domain-Shift & Shortcut-Learning Audit"
+type: software
+authors:
+  - family-names: "Pareddy"
+    given-names: "Charith Reddy"
+date-released: "2026-08-27"
+url: "https://github.com/Charith-Reddy-Pareddy/medical-image-classification-for-disease-detection"
+abstract: >
+  An honors case study auditing pneumonia classifiers (a from-scratch CNN,
+  ResNet-50, and DenseNet-121) trained on a single pediatric institution
+  and evaluated without retraining on two independent adult-population
+  chest X-ray datasets. Quantifies domain-shift degradation with
+  bootstrapped confidence intervals and McNemar's test, and measures
+  shortcut-feature reliance via a Grad-CAM-vs-lung-segmentation overlap
+  metric with a border-masking ablation and causal analysis of what
+  predicts it.
+keywords:
+  - medical imaging
+  - domain shift
+  - shortcut learning
+  - chest x-ray
+  - pneumonia detection
+  - grad-cam
+  - pytorch
+license: MIT
