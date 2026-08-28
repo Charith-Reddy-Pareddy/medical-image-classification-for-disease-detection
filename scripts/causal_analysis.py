@@ -55,7 +55,9 @@ def main(model_name: str, kaggle_n: int, nih_n: int):
     try:
         result = fit_shortcut_logistic_regression(causal_df)
         print(result.summary())
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- statsmodels raises different types
+        # (LinAlgError, PerfectSeparationError, ValueError) depending on version
+        # and how badly the fit is separated; all of them mean the same thing here.
         print(f"Regression failed to fit cleanly ({e}). With this few examples and this checkpoint's "
               "heavy skew toward one class (see Day 5's domain-shift results), quasi-separation is "
               "expected -- rerun with more samples or a properly converged model for a trustworthy fit.")

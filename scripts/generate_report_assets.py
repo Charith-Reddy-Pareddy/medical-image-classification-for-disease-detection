@@ -81,7 +81,7 @@ def parse_results_table(path: Path):
     for line in path.read_text().splitlines():
         m = re.match(r"\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\d+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|", line)
         if m:
-            model, dataset, n, acc, prec, rec, f1, auc = m.groups()
+            model, dataset, _n, acc, _prec, _rec, _f1, auc = m.groups()
             rows.append({"model": model, "dataset": dataset, "auc": float(auc), "accuracy": float(acc)})
     return rows
 

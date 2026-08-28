@@ -20,7 +20,7 @@ def test_bootstrap_ci_random_predictions_interval_contains_half():
     y_true = rng.integers(0, 2, 300)
     y_prob = rng.uniform(0, 1, 300)
 
-    point, lower, upper = bootstrap_ci(y_true, y_prob, roc_auc_score, n_boot=300)
+    _point, lower, upper = bootstrap_ci(y_true, y_prob, roc_auc_score, n_boot=300)
     assert lower < 0.5 < upper
 
 

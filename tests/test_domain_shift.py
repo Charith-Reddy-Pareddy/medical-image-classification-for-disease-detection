@@ -20,7 +20,7 @@ def test_evaluate_across_datasets_reports_metrics_per_dataset():
     results = evaluate_across_datasets(model, loaders, device=torch.device("cpu"))
 
     assert set(results.keys()) == {"site_a", "site_b"}
-    for name, result in results.items():
+    for result in results.values():
         assert len(result["y_true"]) == 8
         assert len(result["y_prob"]) == 8
         assert "accuracy" in result["metrics"]
