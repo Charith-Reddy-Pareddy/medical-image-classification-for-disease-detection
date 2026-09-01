@@ -30,7 +30,12 @@ MIN_PLAUSIBLE_BLOBS = 2
 def image_resolution_features(path: str) -> dict:
     with Image.open(path) as img:
         width, height = img.size
-    return {"width": width, "height": height, "log_area": float(np.log(width * height)), "aspect_ratio": width / height}
+    return {
+        "width": width,
+        "height": height,
+        "log_area": float(np.log(width * height)),
+        "aspect_ratio": width / height,
+    }
 
 
 def detect_text_marker(path: str) -> bool:

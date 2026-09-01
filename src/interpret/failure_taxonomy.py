@@ -35,7 +35,9 @@ def categorize_false_negative(
     return "subtle_opacity"
 
 
-def build_failure_taxonomy(model, manifest_df, device, transform, n_samples: int | None = None, seed: int = 42) -> pd.DataFrame:
+def build_failure_taxonomy(
+    model, manifest_df, device, transform, n_samples: int | None = None, seed: int = 42
+) -> pd.DataFrame:
     """Finds false negatives, computes Grad-CAM/lung overlap and exposure
     stats for each, and heuristically buckets them.
     """

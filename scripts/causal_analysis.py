@@ -37,30 +37,38 @@ def main(model_name: str, kaggle_n: int, nih_n: int):
     nih_records = per_image_overlaps(model, nih_manifest, device, transform, n_samples=nih_n, seed=1)
     print(f"  {len(nih_records)} correctly classified")
 
-    shortcut_records = [{"path": r["path"], "overlap": r["overlap"], "age_group": 0} for r in kaggle_records] + [
-        {"path": r["path"], "overlap": r["overlap"], "age_group": 1} for r in nih_records
-    ]
+    shortcut_records = [
+        {"path": r["path"], "overlap": r["overlap"], "age_group": 0} for r in kaggle_records
+    ] + [{"path": r["path"], "overlap": r["overlap"], "age_group": 1} for r in nih_records]
 
     if len(shortcut_records) < 20:
-        print(f"\nOnly {len(shortcut_records)} correctly classified examples total -- too few for a "
-              "meaningful logistic regression (need more per architecture's accuracy on each site). "
-              "Increase --kaggle-n/--nih-n or use a better-trained checkpoint.")
+        print(
+            f"\nOnly {len(shortcut_records)} correctly classified examples total -- too few for a "
+            "meaningful logistic regression (need more per architecture's accuracy on each site). "
+            "Increase --kaggle-n/--nih-n or use a better-trained checkpoint."
+        )
         return
 
     causal_df = build_causal_dataset(shortcut_records)
     print("\n=== Group summary ===")
-    print(causal_df.groupby("age_group")[["shortcut_driven", "text_marker", "log_area", "aspect_ratio"]].mean())
+    print(
+        causal_df.groupby("age_group")[["shortcut_driven", "text_marker", "log_area", "aspect_ratio"]].mean()
+    )
 
-    print("\n=== Logistic regression: shortcut_driven ~ age_group + log_area + aspect_ratio + text_marker ===")
+    print(
+        "\n=== Logistic regression: shortcut_driven ~ age_group + log_area + aspect_ratio + text_marker ==="
+    )
     try:
         result = fit_shortcut_logistic_regression(causal_df)
         print(result.summary())
     except Exception as e:  # noqa: BLE001 -- statsmodels raises different types
         # (LinAlgError, PerfectSeparationError, ValueError) depending on version
         # and how badly the fit is separated; all of them mean the same thing here.
-        print(f"Regression failed to fit cleanly ({e}). With this few examples and this checkpoint's "
-              "heavy skew toward one class (see Day 5's domain-shift results), quasi-separation is "
-              "expected -- rerun with more samples or a properly converged model for a trustworthy fit.")
+        print(
+            f"Regression failed to fit cleanly ({e}). With this few examples and this checkpoint's "
+            "heavy skew toward one class (see Day 5's domain-shift results), quasi-separation is "
+            "expected -- rerun with more samples or a properly converged model for a trustworthy fit."
+        )
 
 
 if __name__ == "__main__":

@@ -41,7 +41,9 @@ def build_eval_loaders(batch_size: int, num_workers: int, nih_sample_size: int |
     openi_ds = ChestXrayDataset(openi_manifest, transform=get_transforms(IMAGE_SIZE, train=False))
 
     return {
-        "kaggle_test": DataLoader(kaggle_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
+        "kaggle_test": DataLoader(
+            kaggle_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers
+        ),
         "nih": DataLoader(nih_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
         "openi": DataLoader(openi_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
     }
@@ -62,7 +64,9 @@ def main(model_name: str, batch_size: int, num_workers: int, nih_sample_size: in
         print(f"\n=== {name} (n={len(result['y_true'])}) ===")
         print("metrics:", result["metrics"])
 
-        auc_point, auc_lo, auc_hi = bootstrap_ci(result["y_true"], result["y_prob"], roc_auc_score, n_boot=1000)
+        auc_point, auc_lo, auc_hi = bootstrap_ci(
+            result["y_true"], result["y_prob"], roc_auc_score, n_boot=1000
+        )
         print(f"AUC-ROC: {auc_point:.3f} (95% CI {auc_lo:.3f}-{auc_hi:.3f})")
 
         sens_fn = sensitivity_at_threshold(0.5)

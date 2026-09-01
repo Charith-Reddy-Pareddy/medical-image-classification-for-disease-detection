@@ -27,7 +27,9 @@ def _make_openi_dir(tmp_path):
     images_dir.mkdir()
 
     def write_report(uid, mesh_xml, image_ids):
-        parent_images = "".join(f'<parentImage id="{iid}"><url>{iid}.png</url></parentImage>' for iid in image_ids)
+        parent_images = "".join(
+            f'<parentImage id="{iid}"><url>{iid}.png</url></parentImage>' for iid in image_ids
+        )
         (reports_dir / f"{uid}.xml").write_text(
             f"<eCitation><uId id='CXR{uid}'/><MeSH>{mesh_xml}</MeSH>{parent_images}</eCitation>"
         )

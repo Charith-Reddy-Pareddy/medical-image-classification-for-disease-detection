@@ -9,11 +9,35 @@ def _make_nih_dir(tmp_path):
     images_dir.mkdir()
 
     rows = [
-        {"Image Index": "a.png", "Finding Labels": "Pneumonia", "Patient Age": 40, "Patient Sex": "M", "View Position": "PA"},
-        {"Image Index": "b.png", "Finding Labels": "No Finding", "Patient Age": 25, "Patient Sex": "F", "View Position": "AP"},
-        {"Image Index": "c.png", "Finding Labels": "Infiltration", "Patient Age": 60, "Patient Sex": "M", "View Position": "PA"},
+        {
+            "Image Index": "a.png",
+            "Finding Labels": "Pneumonia",
+            "Patient Age": 40,
+            "Patient Sex": "M",
+            "View Position": "PA",
+        },
+        {
+            "Image Index": "b.png",
+            "Finding Labels": "No Finding",
+            "Patient Age": 25,
+            "Patient Sex": "F",
+            "View Position": "AP",
+        },
+        {
+            "Image Index": "c.png",
+            "Finding Labels": "Infiltration",
+            "Patient Age": 60,
+            "Patient Sex": "M",
+            "View Position": "PA",
+        },
         # d.png has a label but the file is missing on disk -- should be dropped
-        {"Image Index": "d.png", "Finding Labels": "Pneumonia", "Patient Age": 50, "Patient Sex": "F", "View Position": "PA"},
+        {
+            "Image Index": "d.png",
+            "Finding Labels": "Pneumonia",
+            "Patient Age": 50,
+            "Patient Sex": "F",
+            "View Position": "PA",
+        },
     ]
     pd.DataFrame(rows).to_csv(tmp_path / "Data_Entry_2017_v2020.csv", index=False)
 

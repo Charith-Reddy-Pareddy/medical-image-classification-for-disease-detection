@@ -2,6 +2,7 @@
 Grad-CAM overlays) and the hero domain-shift visualization. Run after
 scripts/generate_results_table.py so docs/results.md is current.
 """
+
 import re
 import sys
 from pathlib import Path
@@ -56,7 +57,9 @@ def generate_negative_case_gallery(model_name: str, n_cases: int = 5, seed: int 
 
         true_label = "PNEUMONIA" if row["label"] == 1 else "NORMAL"
         pred_label = "PNEUMONIA" if pred == 1 else "NORMAL"
-        fname = f"{model_name}_misclassified_{len(found)+1}_true-{true_label}_pred-{pred_label}_p{prob:.2f}.png"
+        fname = (
+            f"{model_name}_misclassified_{len(found) + 1}_true-{true_label}_pred-{pred_label}_p{prob:.2f}.png"
+        )
 
         fig, axes = plt.subplots(1, 2, figsize=(6, 3))
         axes[0].imshow(display_img)
@@ -69,7 +72,9 @@ def generate_negative_case_gallery(model_name: str, n_cases: int = 5, seed: int 
         fig.savefig(ASSETS_DIR / fname, dpi=120)
         plt.close(fig)
 
-        found.append({"path": row["path"], "true": true_label, "pred": pred_label, "prob": prob, "asset": fname})
+        found.append(
+            {"path": row["path"], "true": true_label, "pred": pred_label, "prob": prob, "asset": fname}
+        )
         if len(found) >= n_cases:
             break
 
@@ -79,7 +84,10 @@ def generate_negative_case_gallery(model_name: str, n_cases: int = 5, seed: int 
 def parse_results_table(path: Path):
     rows = []
     for line in path.read_text().splitlines():
-        m = re.match(r"\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\d+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|", line)
+        m = re.match(
+            r"\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\d+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|",
+            line,
+        )
         if m:
             model, dataset, _n, acc, _prec, _rec, _f1, auc = m.groups()
             rows.append({"model": model, "dataset": dataset, "auc": float(auc), "accuracy": float(acc)})

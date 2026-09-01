@@ -4,7 +4,9 @@ from src.data.labels import harmonize_chexpert, harmonize_nih
 
 
 def test_harmonize_nih_pneumonia_positive():
-    df = pd.DataFrame({"Finding Labels": ["Pneumonia", "Infiltration|Pneumonia", "No Finding", "Infiltration"]})
+    df = pd.DataFrame(
+        {"Finding Labels": ["Pneumonia", "Infiltration|Pneumonia", "No Finding", "Infiltration"]}
+    )
     out = harmonize_nih(df)
     # the lone "Infiltration" row (non-pneumonia finding) is an ambiguous negative, excluded
     assert len(out) == 3

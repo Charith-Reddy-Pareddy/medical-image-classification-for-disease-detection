@@ -27,8 +27,12 @@ def get_dataloaders(batch_size: int):
     train_ds = ChestXrayDataset(train_df, transform=get_transforms(IMAGE_SIZE, train=True))
     val_ds = ChestXrayDataset(val_df, transform=get_transforms(IMAGE_SIZE, train=False))
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=6, persistent_workers=True)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=6, persistent_workers=True)
+    train_loader = DataLoader(
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=6, persistent_workers=True
+    )
+    val_loader = DataLoader(
+        val_ds, batch_size=batch_size, shuffle=False, num_workers=6, persistent_workers=True
+    )
     return train_loader, val_loader
 
 

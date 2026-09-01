@@ -31,7 +31,9 @@ def main(model_name: str, n_samples: int | None):
     print(shortcut_metric_report(model, test_df, device, transform, n_samples=n_samples))
 
     print("\n=== Border/text mask accuracy drop ===")
-    sample_df = test_df if n_samples is None else test_df.sample(n=min(n_samples, len(test_df)), random_state=SEED)
+    sample_df = (
+        test_df if n_samples is None else test_df.sample(n=min(n_samples, len(test_df)), random_state=SEED)
+    )
     loader = DataLoader(ChestXrayDataset(sample_df, transform=transform), batch_size=32)
     print(border_mask_accuracy_drop(model, loader, device, border_frac=0.1))
 

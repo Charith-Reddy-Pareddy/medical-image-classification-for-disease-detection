@@ -43,7 +43,9 @@ def build_loaders(batch_size: int, num_workers: int, nih_sample_size):
     openi_ds = ChestXrayDataset(openi_manifest, transform=get_transforms(IMAGE_SIZE, train=False))
 
     return {
-        "kaggle_test": DataLoader(kaggle_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
+        "kaggle_test": DataLoader(
+            kaggle_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers
+        ),
         "nih": DataLoader(nih_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
         "openi": DataLoader(openi_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers),
     }
@@ -63,8 +65,12 @@ def render_markdown_table(all_results: dict, n_boot: int) -> str:
         for dataset_name, result in dataset_results.items():
             m = result["metrics"]
             n = len(result["y_true"])
-            _point, auc_lo, auc_hi = bootstrap_ci(result["y_true"], result["y_prob"], roc_auc_score, n_boot=n_boot)
-            _point, sens_lo, sens_hi = bootstrap_ci(result["y_true"], result["y_prob"], sens_fn, n_boot=n_boot)
+            _point, auc_lo, auc_hi = bootstrap_ci(
+                result["y_true"], result["y_prob"], roc_auc_score, n_boot=n_boot
+            )
+            _point, sens_lo, sens_hi = bootstrap_ci(
+                result["y_true"], result["y_prob"], sens_fn, n_boot=n_boot
+            )
             lines.append(
                 f"| {model_name} | {dataset_name} | {n} | {m['accuracy']:.3f} | {m['precision']:.3f} | "
                 f"{m['recall']:.3f} | {m['f1']:.3f} | {m['auc_roc']:.3f} | "
@@ -108,6 +114,8 @@ if __name__ == "__main__":
         default=None,
         help="Evaluate on a random sample of NIH instead of all 61k+ examples. Omit for the full set.",
     )
-    parser.add_argument("--n-boot", type=int, default=1000, help="Bootstrap resamples for confidence intervals.")
+    parser.add_argument(
+        "--n-boot", type=int, default=1000, help="Bootstrap resamples for confidence intervals."
+    )
     args = parser.parse_args()
     main(args.batch_size, args.num_workers, args.nih_sample_size, args.n_boot)
