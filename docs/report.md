@@ -18,14 +18,15 @@ baseline CNN's OpenI AUC-ROC (0.512, 95% CI 0.469–0.556) statistically
 indistinguishable from chance. A quantitative Grad-CAM audit against a
 pretrained lung-segmentation model finds that 74–81% of *correctly*
 classified cases across all three architectures show below-threshold
-overlap with actual lung tissue — shortcut reliance is the median
+overlap with the reference lung field — shortcut reliance is the median
 behavior, not a tail risk — illustrated by a case where a model predicts
 pneumonia with 100% confidence while attending entirely to a corner
-laterality marker. A causal analysis (logistic regression) finds that
-shortcut reliance is not consistently explained by pediatric-vs-adult age
-group across architectures; where it is explained at all, it tracks image
-resolution and detected scanner artifacts — measurable, mechanistic
-proxies, not an unexplained institutional label. The practical conclusion:
+laterality marker. A multivariable association analysis (logistic
+regression) finds that shortcut reliance is not consistently explained by
+pediatric-vs-adult age group across architectures; where it is explained
+at all, it tracks image resolution and detected scanner artifacts —
+measurable proxies, not an unexplained institutional label; this is an
+association finding, not a causal one (§6.6). The practical conclusion:
 none of these models should be deployed autonomously outside a population
 resembling their training data, and single-site external validation is not
 sufficient grounds for a clinical deployment decision.
@@ -63,8 +64,9 @@ discussed above, motivate the entire premise. **Interpretability**: Grad-CAM
 (Selvaraju et al., 2017) is the attention-visualization method underlying
 every Grad-CAM figure and the quantitative shortcut metric in this report;
 the shortcut metric's contribution is comparing that attention against a
-segmentation ground truth across a full test set, rather than presenting a
-gallery of hand-picked heatmaps as qualitative evidence. **Algorithmic
+reference lung segmentation (itself a pretrained model's prediction, not
+radiologist-annotated ground truth) across a full test set, rather than
+presenting a gallery of hand-picked heatmaps as qualitative evidence. **Algorithmic
 fairness in healthcare**: Obermeyer et al. (2019) showed a widely deployed
 healthcare risk-prediction algorithm exhibited significant racial bias
 because it used healthcare cost as a proxy for healthcare need — a
@@ -233,7 +235,7 @@ same way.** Baseline CNN's AUC-ROC on OpenI (0.512) is barely above chance
 in-domain AUC of any architecture. If "domain shift" were one monolithic
 effect, all three models would rank the two external sites the same way.
 They don't. That is direct evidence against treating domain shift as an
-unexplained black box, and motivates the causal analysis in §6.5.
+unexplained black box, and motivates the association analysis in §6.6.
 
 ### 6.3 False-negative failure taxonomy
 
@@ -272,23 +274,31 @@ threshold.
 | ResNet-50 | 145 | 12.5% | 81.4% | 1.3 points (0.967 → 0.953) |
 | DenseNet-121 | 147 | 15.7% | 74.1% | 3.3 points (0.980 → 0.947) |
 
-Two independent signals agree on the same conclusion: **all three
-architectures attend mostly to non-lung regions even when they get the
-right answer.** Mean overlap sits at 12–16% across the board — nowhere
-close to what "looking at the lungs" should produce — and 74–81% of
-correctly classified cases fall under the 30% overlap cutoff.
+Two independent signals agree on the same conclusion: **for all three
+architectures, Grad-CAM localization falls predominantly outside the
+reference lung field even on correctly classified cases.** Mean overlap
+sits at 12–16% across the board — nowhere close to what a lung-focused
+saliency map should produce — and 74–81% of correctly classified cases
+fall under the 30% overlap cutoff. Grad-CAM is not guaranteed to be a
+fully faithful account of what the network actually used to decide, so
+this is evidence about *where the model's attention localizes*, not a
+direct readout of its internal reasoning; the border-masking ablation
+below is an independent, interventional check on the same conclusion
+rather than a restatement of it.
 
 The border-masking ablation adds a mechanistic detail the overlap metric
-alone can't: masking the outer 10% of each image (where scanner
+alone can't, and — because it's an intervention on the input rather than
+a post-hoc visualization — corroborates the Grad-CAM finding rather than
+just repeating it: masking the outer 10% of each image (where scanner
 text/artifacts typically live) costs the baseline CNN 14.7 accuracy
 points, but only 1.3–3.3 points for the transfer-learning models. So while
-all three models are attending broadly to non-lung regions, the *specific*
-shortcut differs — the from-scratch baseline appears meaningfully
-dependent on border/text artifacts specifically, while ResNet-50 and
-DenseNet-121's non-lung attention is concentrated somewhere else in the
-image (plausibly ImageNet-pretrained texture/edge priors that don't map
-onto radiographic anatomy), a distinction invisible to the overlap metric
-alone.
+all three models show Grad-CAM localization concentrated outside the
+reference lung field, the *specific* shortcut differs — the from-scratch
+baseline appears meaningfully dependent on border/text artifacts
+specifically, while ResNet-50 and DenseNet-121's non-lung attention is
+concentrated somewhere else in the image (plausibly ImageNet-pretrained
+texture/edge priors that don't map onto radiographic anatomy), a
+distinction invisible to the overlap metric alone.
 
 ### 6.5 Negative-case gallery
 
@@ -330,9 +340,15 @@ auditing — not spot-checking a handful of correct predictions — is
 necessary: a model can be maximally confident and maximally wrong for a
 reason that has nothing to do with the pathology it claims to detect.
 
-### 6.6 Age-artifact causal analysis
+### 6.6 Age-artifact association analysis
 
-The central causal question: does shortcut reliance (overlap < 30%, from
+This is a multivariable association analysis, not a causal one:
+Kaggle/NIH/OpenI differ simultaneously along age, hospital, scanner,
+prevalence, acquisition protocol, and labeling methodology, so a
+significant age_group coefficient below shows that the age proxy carries
+signal conditional on the other covariates in the model — it does not
+isolate age itself as the causal driver of shortcut reliance. The central
+question: does shortcut reliance (overlap < 30%, from
 §6.4) track pediatric-vs-adult age group specifically, or is it better
 explained by a directly measurable proxy — image resolution or detected
 scanner text markers? (Text-marker detection uses a coarse OpenCV corner-
@@ -392,7 +408,7 @@ two external sites degrade differently per architecture is a direct
 argument against validating a clinical model against a single external
 site and calling it "externally validated." A model that generalizes
 acceptably to one adult population can still fail near-randomly (AUC ≈
-0.51) on another, for reasons the causal analysis suggests are
+0.51) on another, for reasons the association analysis suggests are
 architecture-specific.
 
 **Deployment recommendation.** Given (1) systematic threshold
@@ -409,6 +425,15 @@ health check — not a one-time validation step.
 
 ## 8. Limitations
 
+- **External-site comparisons are confounded, not isolated.** Kaggle,
+  NIH, and OpenI differ simultaneously in age, hospital, scanner,
+  acquisition protocol, labeling methodology, prevalence, and
+  geographic population. Degradation on an external site should be read
+  as jointly reflecting all of these together — not attributed to any
+  single factor such as "pediatric vs. adult age" in isolation. §6.6's
+  regression identifies which measurable proxies carry signal
+  conditional on the others; it does not disentangle true causal drivers
+  from this confounded bundle.
 - **Training budget.** Twenty epochs (baseline) and ten (transfer models)
   produce clear, working results but are not necessarily converged optima;
   reported numbers should be read as demonstrating real, measured
@@ -416,7 +441,7 @@ health check — not a one-time validation step.
 - **Text-marker detection is heuristic**, not OCR — a documented
   approximation (§6.6), validated indirectly through its ResNet-50
   significance rather than against hand-labeled ground truth.
-- **Causal analysis sample sizes** (60–194 examples per model) are modest
+- **Association analysis sample sizes** (60–194 examples per model) are modest
   for a four-predictor logistic regression; confidence intervals on
   individual coefficients are wide, and the DenseNet-121 model's
   significant overall fit without significant individual predictors should
@@ -441,7 +466,7 @@ miscalibration and partly by a measurable, quantified reliance on non-lung
 image regions rather than pathology. Where that shortcut reliance can be
 statistically explained at all, it tracks resolution and detected image
 artifacts specifically, not an unexplained "domain shift" or "age" label —
-evidence for a testable causal mechanism over a black-box excuse, and a
+evidence for a testable, measurable mechanism over a black-box excuse, and a
 concrete illustration of why single-site validation is insufficient
 grounds for clinical deployment of any of the three architectures
 evaluated here.

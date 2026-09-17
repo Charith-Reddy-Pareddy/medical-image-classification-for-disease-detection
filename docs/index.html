@@ -4,14 +4,14 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Chest X-Ray Domain-Shift &amp; Shortcut-Learning Audit</title>
-<meta name="description" content="A pneumonia classifier trained on one pediatric hospital, evaluated without retraining on two independent adult-population sites — with a quantitative Grad-CAM audit of whether it's actually looking at the lungs." />
+<meta name="description" content="A pneumonia classifier trained on one pediatric hospital, evaluated without retraining on two independent adult-population sites — with a quantitative Grad-CAM audit of whether its attention actually localizes to the lungs." />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Chest X-Ray Domain-Shift &amp; Shortcut-Learning Audit" />
-<meta property="og:description" content="Three architectures, one hospital, two external test sites. AUC-ROC drops from 0.99 in-domain to 0.51 externally — and 74–81% of correct predictions aren't looking at the lungs." />
+<meta property="og:description" content="Three architectures, one hospital, two external test sites. AUC-ROC drops from 0.99 in-domain to 0.51 externally — and Grad-CAM attention falls outside the lung field in 74–81% of correct predictions." />
 <meta property="og:url" content="https://charith-reddy-pareddy.github.io/medical-image-classification-for-disease-detection/" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="Chest X-Ray Domain-Shift &amp; Shortcut-Learning Audit" />
-<meta name="twitter:description" content="Three architectures, one hospital, two external test sites. AUC-ROC drops from 0.99 in-domain to 0.51 externally — and 74–81% of correct predictions aren't looking at the lungs." />
+<meta name="twitter:description" content="Three architectures, one hospital, two external test sites. AUC-ROC drops from 0.99 in-domain to 0.51 externally — and Grad-CAM attention falls outside the lung field in 74–81% of correct predictions." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232a78d6'/%3E%3Cpath d='M30 25 L30 55 Q30 70 42 70 Q50 70 50 58 L50 25 M70 25 L70 55 Q70 70 58 70 Q50 70 50 58' stroke='white' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <style>
   :root {
@@ -184,9 +184,9 @@
         <p class="sub">Baseline CNN on OpenI — 95% CI 0.469–0.556, indistinguishable from chance</p>
       </div>
       <div class="stat-tile">
-        <p class="label">Correct predictions not looking at lungs</p>
+        <p class="label">Correct predictions with low lung overlap</p>
         <p class="value critical">74–81%</p>
-        <p class="sub">Grad-CAM vs. lung-segmentation overlap, all 3 architectures</p>
+        <p class="sub">Grad-CAM attention vs. reference lung mask, all 3 architectures</p>
       </div>
     </div>
   </section>
@@ -260,8 +260,8 @@
   </section>
 
   <section>
-    <h2>Age-artifact causal analysis</h2>
-    <p class="section-sub"><code>shortcut_driven ~ age_group + log(image area) + aspect ratio + text-marker proxy</code> — is shortcut reliance explained by pediatric-vs-adult age, or a more measurable proxy?</p>
+    <h2>Age-artifact association analysis</h2>
+    <p class="section-sub"><code>shortcut_driven ~ age_group + log(image area) + aspect ratio + text-marker proxy</code> — multivariable logistic regression, not a causal estimate. Does shortcut reliance associate with pediatric-vs-adult age, or a more measurable proxy?</p>
     <div class="card">
       <table>
         <thead>

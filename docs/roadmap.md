@@ -9,7 +9,7 @@ Built incrementally over about a week. Checked off as each day lands.
 - [x] **Day 5** — bootstrapped CIs, McNemar's test, domain-shift eval harness (Kaggle -> NIH -> OpenI)
 - [x] **Day 6** — Grad-CAM, quantitative shortcut-feature metric, error taxonomy
 - [x] **Day 7** — added regression tests for the split/label-harmonization edge cases
-- [x] **Day 8** — age-artifact causal analysis, Streamlit demo, results table, polish
+- [x] **Day 8** — age-artifact association analysis, Streamlit demo, results table, polish
 
 That's the full 8-day build, since extended: all three architectures are
 now properly trained and the three-way domain-shift comparison
