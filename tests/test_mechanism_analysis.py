@@ -1,8 +1,8 @@
 import numpy as np
 from PIL import Image
 
-from src.interpret.causal import (
-    build_causal_dataset,
+from src.interpret.mechanism_analysis import (
+    build_mechanism_dataset,
     detect_text_marker,
     fit_shortcut_logistic_regression,
     image_resolution_features,
@@ -40,7 +40,7 @@ def test_detect_text_marker_false_on_uniform_image(tmp_path):
     assert detect_text_marker(str(path)) is False
 
 
-def test_build_causal_dataset_and_fit_logistic_regression(tmp_path):
+def test_build_mechanism_dataset_and_fit_logistic_regression(tmp_path):
     rng = np.random.default_rng(0)
     records = []
     for i in range(200):
@@ -61,12 +61,12 @@ def test_build_causal_dataset_and_fit_logistic_regression(tmp_path):
         overlap = float(np.clip(rng.normal(0.2 if age_group == 1 else 0.5, 0.15), 0.0, 1.0))
         records.append({"path": str(path), "overlap": overlap, "age_group": age_group})
 
-    causal_df = build_causal_dataset(records)
-    assert len(causal_df) == 200
-    assert set(causal_df["age_group"].unique()) == {0, 1}
-    assert set(causal_df["shortcut_driven"].unique()) <= {0, 1}
+    mechanism_df = build_mechanism_dataset(records)
+    assert len(mechanism_df) == 200
+    assert set(mechanism_df["age_group"].unique()) == {0, 1}
+    assert set(mechanism_df["shortcut_driven"].unique()) <= {0, 1}
 
-    result = fit_shortcut_logistic_regression(causal_df)
+    result = fit_shortcut_logistic_regression(mechanism_df)
     assert "age_group" in result.params.index
     # the synthetic data was constructed so age_group predicts shortcut_driven
     assert result.params["age_group"] > 0

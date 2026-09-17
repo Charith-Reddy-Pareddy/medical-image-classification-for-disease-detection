@@ -10,7 +10,7 @@ from src.config import IMAGE_SIZE, KAGGLE_DIR, MODEL_DIR, NIH_DIR, SEED, get_dev
 from src.data.dataset import get_transforms
 from src.data.nih import build_nih_manifest
 from src.data.split import build_manifest, patient_level_split
-from src.interpret.causal import build_causal_dataset, fit_shortcut_logistic_regression
+from src.interpret.mechanism_analysis import build_mechanism_dataset, fit_shortcut_logistic_regression
 from src.interpret.shortcut import per_image_overlaps
 from src.models import MODEL_REGISTRY
 
@@ -49,17 +49,21 @@ def main(model_name: str, kaggle_n: int, nih_n: int):
         )
         return
 
-    causal_df = build_causal_dataset(shortcut_records)
+    mechanism_df = build_mechanism_dataset(shortcut_records)
     print("\n=== Group summary ===")
     print(
-        causal_df.groupby("age_group")[["shortcut_driven", "text_marker", "log_area", "aspect_ratio"]].mean()
+        mechanism_df.groupby("age_group")[
+            ["shortcut_driven", "text_marker", "log_area", "aspect_ratio"]
+        ].mean()
     )
 
     print(
-        "\n=== Logistic regression: shortcut_driven ~ age_group + log_area + aspect_ratio + text_marker ==="
+        "\n=== Association: shortcut_driven ~ age_group + log_area + aspect_ratio + text_marker ==="
+        "\n(multivariable logistic regression -- observational association, not a causal estimate;"
+        " see src/interpret/mechanism_analysis.py docstring)"
     )
     try:
-        result = fit_shortcut_logistic_regression(causal_df)
+        result = fit_shortcut_logistic_regression(mechanism_df)
         print(result.summary())
     except Exception as e:  # noqa: BLE001 -- statsmodels raises different types
         # (LinAlgError, PerfectSeparationError, ValueError) depending on version

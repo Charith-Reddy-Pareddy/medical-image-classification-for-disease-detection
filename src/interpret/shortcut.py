@@ -92,14 +92,36 @@ def per_image_overlaps(
     """Per-image Grad-CAM/lung-mask overlap for correctly classified
     examples. Returns a list of {"path", "overlap", "label"} dicts --
     the shared building block behind shortcut_metric_report and the
-    Experiment 9 causal analysis.
+    Experiment 9 mechanism/association analysis.
+    """
+    records_by_threshold = per_image_overlaps_multi_threshold(
+        model, manifest_df, device, transform, [cam_threshold], n_samples, seed
+    )
+    return records_by_threshold[cam_threshold]
+
+
+def per_image_overlaps_multi_threshold(
+    model,
+    manifest_df,
+    device,
+    transform,
+    cam_thresholds: list,
+    n_samples: int | None = None,
+    seed: int = 42,
+) -> dict:
+    """Same correctly-classified population as `per_image_overlaps`, but
+    computes the (expensive) Grad-CAM heatmap and lung mask once per
+    image and reuses them across every threshold in cam_thresholds --
+    the basis for a cam_threshold/overlap_cutoff sensitivity sweep
+    without re-running Grad-CAM once per threshold combination.
+    Returns {cam_threshold: [{"path", "overlap", "label"}, ...], ...}.
     """
     df = manifest_df
     if n_samples is not None and n_samples < len(df):
         df = df.sample(n=n_samples, random_state=seed).reset_index(drop=True)
 
     model.eval()
-    records = []
+    records_by_threshold = {t: [] for t in cam_thresholds}
     for _, row in df.iterrows():
         image = Image.open(row["path"]).convert("RGB")
         tensor = transform(image).to(device)
@@ -114,7 +136,10 @@ def per_image_overlaps(
         mask_resized = cv2.resize(
             mask.astype(np.uint8), (cam.shape[1], cam.shape[0]), interpolation=cv2.INTER_NEAREST
         ).astype(bool)
-        overlap = gradcam_overlap_fraction(cam, mask_resized, cam_threshold)
-        records.append({"path": row["path"], "overlap": overlap, "label": row["label"]})
+        for threshold in cam_thresholds:
+            overlap = gradcam_overlap_fraction(cam, mask_resized, threshold)
+            records_by_threshold[threshold].append(
+                {"path": row["path"], "overlap": overlap, "label": row["label"]}
+            )
 
-    return records
+    return records_by_threshold

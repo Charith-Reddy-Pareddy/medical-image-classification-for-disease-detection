@@ -1,8 +1,18 @@
-"""Age-artifact causal analysis (Experiment 9): does shortcut reliance
-(low Grad-CAM/lung overlap, from Experiment 8) track pediatric-vs-adult
-imaging differences specifically, or is it better explained by a
-measurable proxy -- image resolution and detected scanner text markers?
-Tested via logistic regression rather than an eyeballed correlation.
+"""Age-artifact association analysis (Experiment 9): does shortcut
+reliance (low Grad-CAM/lung overlap, from Experiment 8) track
+pediatric-vs-adult imaging differences specifically, or is it better
+explained by a measurable proxy -- image resolution and detected
+scanner text markers? Tested via multivariable logistic regression
+rather than an eyeballed correlation.
+
+This is observational association, not causal identification: including
+age_group as a covariate alongside resolution/text-marker proxies shows
+which one predicts shortcut reliance conditional on the others, not
+which one causes it. Kaggle/NIH/OpenI differ simultaneously in age,
+hospital, scanner, prevalence, acquisition protocol, and labeling
+methodology, so even a significant age_group coefficient here doesn't
+isolate "age" as the mechanism -- it says the age proxy carries signal
+the resolution/text-marker proxies don't.
 
 Text-marker detection is a coarse heuristic, not OCR: tesseract wasn't
 available in this environment, and the proposal explicitly allows a
@@ -57,29 +67,34 @@ def detect_text_marker(path: str) -> bool:
     return len(plausible) >= MIN_PLAUSIBLE_BLOBS
 
 
-def build_causal_dataset(shortcut_records: list) -> pd.DataFrame:
+def build_mechanism_dataset(shortcut_records: list, overlap_cutoff: float = 0.3) -> pd.DataFrame:
     """shortcut_records: list of dicts with 'path', 'overlap', 'age_group'
     (0=pediatric/Kaggle, 1=adult/NIH), as produced by shortcut_metric_report
     for individual images. Adds resolution and text-marker features.
+    overlap_cutoff must match whatever threshold shortcut_records was
+    computed under -- exposed as a parameter, not hardcoded, so this can
+    be re-run across thresholds for a sensitivity analysis.
     """
     rows = []
     for rec in shortcut_records:
         features = image_resolution_features(rec["path"])
         features["text_marker"] = int(detect_text_marker(rec["path"]))
         features["age_group"] = rec["age_group"]
-        features["shortcut_driven"] = int(rec["overlap"] < 0.3)
+        features["shortcut_driven"] = int(rec["overlap"] < overlap_cutoff)
         rows.append(features)
     return pd.DataFrame(rows)
 
 
-def fit_shortcut_logistic_regression(causal_df: pd.DataFrame):
+def fit_shortcut_logistic_regression(mechanism_df: pd.DataFrame):
     """Logistic regression of shortcut_driven ~ age_group + log_area +
     aspect_ratio + text_marker. Returns the fitted statsmodels result --
     if age_group's coefficient stops being significant once the
-    resolution/text-marker proxies are included, that's evidence the
-    proxies (not an unexplained "age" label) are the real mechanism.
+    resolution/text-marker proxies are included, that's evidence those
+    proxies explain more of the association than an unexplained "age"
+    label does. This is a multivariable association result, not a causal
+    claim: see the module docstring.
     """
-    X = causal_df[["age_group", "log_area", "aspect_ratio", "text_marker"]].astype(float)
+    X = mechanism_df[["age_group", "log_area", "aspect_ratio", "text_marker"]].astype(float)
     X = sm.add_constant(X)
-    y = causal_df["shortcut_driven"].astype(float)
+    y = mechanism_df["shortcut_driven"].astype(float)
     return sm.Logit(y, X).fit(disp=0)

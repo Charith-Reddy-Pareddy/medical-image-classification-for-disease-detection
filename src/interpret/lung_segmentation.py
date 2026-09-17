@@ -22,8 +22,10 @@ def _get_model():
 def lung_mask(image_path: str, threshold: float = 0.5) -> np.ndarray:
     """Binary lung field mask from a pretrained chest-xray segmentation
     model (PSPNet, torchxrayvision), independent of our own classifier's
-    preprocessing. Used as ground truth for the shortcut-feature metric:
-    does the classifier's Grad-CAM attention actually fall on the lungs?
+    preprocessing. Used as a reference lung mask for the shortcut-feature
+    metric -- another model's prediction, not a radiologist-annotated
+    ground truth -- to check whether the classifier's Grad-CAM attention
+    falls inside the estimated lung field.
     """
     img = np.array(Image.open(image_path).convert("RGB")).astype(np.float32)
     img = xrv.datasets.normalize(img, 255)  # -> [-1024, 1024]
