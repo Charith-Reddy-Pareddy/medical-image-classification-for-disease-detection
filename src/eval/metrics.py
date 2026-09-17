@@ -30,6 +30,7 @@ def compute_metrics(y_true, y_prob, threshold: float = 0.5) -> dict:
     tn = int(np.sum((y_pred == 0) & (y_true == 0)))
     fp = int(np.sum((y_pred == 1) & (y_true == 0)))
     fn = int(np.sum((y_pred == 0) & (y_true == 1)))
+    has_both_classes = len(np.unique(y_true)) > 1
 
     metrics = {
         "accuracy": accuracy_score(y_true, y_pred),
@@ -38,9 +39,11 @@ def compute_metrics(y_true, y_prob, threshold: float = 0.5) -> dict:
         "f1": f1_score(y_true, y_pred, zero_division=0),
         "specificity": tn / (tn + fp) if (tn + fp) > 0 else float("nan"),
         "npv": tn / (tn + fn) if (tn + fn) > 0 else float("nan"),
-        "balanced_accuracy": balanced_accuracy_score(y_true, y_pred),
+        # like AUC/AUPRC, balanced accuracy (mean per-class recall) is
+        # degenerate with only one true class present -- NaN rather than
+        # a misleading number from sklearn's single-class fallback
+        "balanced_accuracy": balanced_accuracy_score(y_true, y_pred) if has_both_classes else float("nan"),
+        "auc_roc": roc_auc_score(y_true, y_prob) if has_both_classes else float("nan"),
+        "auprc": average_precision_score(y_true, y_prob) if has_both_classes else float("nan"),
     }
-    has_both_classes = len(np.unique(y_true)) > 1
-    metrics["auc_roc"] = roc_auc_score(y_true, y_prob) if has_both_classes else float("nan")
-    metrics["auprc"] = average_precision_score(y_true, y_prob) if has_both_classes else float("nan")
     return metrics
