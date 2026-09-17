@@ -54,3 +54,7 @@ def test_build_openi_manifest_harmonizes_and_resolves_paths(tmp_path):
     assert len(manifest) == 3  # 1 normal + 2 pneumonia images from report 2
     assert manifest["label"].tolist() == [0, 1, 1]
     assert all(manifest["path"].apply(lambda p: p.endswith(".png")))
+    # the two pneumonia rows are frontal+lateral views of the same study
+    pneumonia_rows = manifest[manifest["label"] == 1]
+    assert pneumonia_rows["study_id"].nunique() == 1
+    assert manifest.loc[manifest["label"] == 0, "study_id"].iloc[0] == "1"

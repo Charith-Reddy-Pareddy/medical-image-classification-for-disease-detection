@@ -15,6 +15,7 @@ def _make_nih_dir(tmp_path):
             "Patient Age": 40,
             "Patient Sex": "M",
             "View Position": "PA",
+            "Patient ID": 1001,
         },
         {
             "Image Index": "b.png",
@@ -22,6 +23,7 @@ def _make_nih_dir(tmp_path):
             "Patient Age": 25,
             "Patient Sex": "F",
             "View Position": "AP",
+            "Patient ID": 1002,
         },
         {
             "Image Index": "c.png",
@@ -29,6 +31,7 @@ def _make_nih_dir(tmp_path):
             "Patient Age": 60,
             "Patient Sex": "M",
             "View Position": "PA",
+            "Patient ID": 1003,
         },
         # d.png has a label but the file is missing on disk -- should be dropped
         {
@@ -37,6 +40,7 @@ def _make_nih_dir(tmp_path):
             "Patient Age": 50,
             "Patient Sex": "F",
             "View Position": "PA",
+            "Patient ID": 1004,
         },
     ]
     pd.DataFrame(rows).to_csv(tmp_path / "Data_Entry_2017_v2020.csv", index=False)
@@ -56,3 +60,4 @@ def test_build_nih_manifest_harmonizes_and_resolves_paths(tmp_path):
     assert len(manifest) == 2
     assert set(manifest["label"]) == {0, 1}
     assert all(manifest["path"].apply(lambda p: p.endswith(".png")))
+    assert set(manifest["Patient ID"]) == {1001, 1002}

@@ -19,10 +19,14 @@ def _parse_reports(reports_dir: Path) -> pd.DataFrame:
                 "imageid": image.attrib["id"],
                 "labels_major": labels_major,
                 "labels_automatic": labels_automatic,
+                # xml_path stem -- the report/study ID. Multiple images
+                # (frontal + lateral views) can share one study, so this
+                # is the clustering key for patient-level bootstrap CIs.
+                "study_id": xml_path.stem,
             }
             for image in root.findall(".//parentImage")
         )
-    return pd.DataFrame(rows, columns=["imageid", "labels_major", "labels_automatic"])
+    return pd.DataFrame(rows, columns=["imageid", "labels_major", "labels_automatic", "study_id"])
 
 
 def build_openi_manifest(openi_dir: Path) -> pd.DataFrame:
@@ -38,4 +42,4 @@ def build_openi_manifest(openi_dir: Path) -> pd.DataFrame:
     harmonized["path"] = harmonized["imageid"].apply(lambda iid: str(openi_dir / "images" / f"{iid}.png"))
     harmonized = harmonized[harmonized["path"].apply(lambda p: Path(p).is_file())]
 
-    return harmonized[["path", "label"]].reset_index(drop=True)
+    return harmonized[["path", "label", "study_id"]].reset_index(drop=True)
