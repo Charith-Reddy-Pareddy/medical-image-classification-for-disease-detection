@@ -28,3 +28,7 @@ Keep Kaggle credentials and other tokens outside the repository. Never add crede
 ## Reproducibility
 
 Keep non-sensitive source details and label-mapping decisions in the project. Before reporting results, verify the data version and split logic used by the run. Do not publish results from data whose access terms or provenance are unclear.
+
+## Earlier project materials
+
+The earlier implementation, saved checkpoints, and reported results are not included in this repository. Treat them as reference material until their provenance and applicable dataset terms have been reviewed. Confirm the data and configuration behind an artifact before reuse, and reproduce reported metrics with the rebuilt pipeline.
