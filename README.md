@@ -18,6 +18,18 @@ The planned training source is the Kaggle Chest X-Ray Images (Pneumonia) dataset
 
 A regression over observed image characteristics can describe associations; it does not by itself identify causal effects. Grad-CAM overlap with a model-produced lung mask is a localization measure, not proof of what the classifier relies on. Comparisons between datasets can reflect differences in population, prevalence, acquisition, labeling, and institution.
 
+## Development setup
+
+Use Python 3.10–3.12. From the repository root:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+pytest
+ruff check .
+```
+
 ## Status
 
 This repository is being rebuilt. Previously reported metrics and conclusions have not yet been reproduced in this repository and should not be treated as verified results.
