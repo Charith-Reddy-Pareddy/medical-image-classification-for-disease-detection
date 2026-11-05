@@ -35,6 +35,16 @@ Reviewed 2026-11-04. Recheck source pages and terms when downloading; dataset pa
 
 No cross-dataset binary label mapping has been established yet. Keep each source's labels distinct until the mapping and ambiguous cases have been reviewed.
 
+## Grouping and split units
+
+A local review of the earlier project materials found usable grouping keys, with limits that must be checked again against the exact download used by this rebuild:
+
+- **Kaggle:** In the local 5,856-image snapshot, the filename parser recognized every name and found 170 patient-key overlaps between the supplied train and test folders. Use filename-derived patient keys for grouping, and verify parser coverage and split overlap for every new download before using its split.
+- **NIH:** The local metadata CSV includes a `Patient ID` column. Use that field as the grouping key for patient-level splits and clustered evaluation when NIH is used.
+- **Indiana University/OpenI:** The XML links images to report records, and some reports link multiple images. A report identifier can group images from the same report, but it has not been verified as a person-level identifier across reports. Describe any resampling by report/study unless a stable patient key is confirmed.
+
+The local counts above describe an earlier snapshot only. They do not establish the structure or split quality of a future download.
+
 ## Reproducibility
 
 Keep non-sensitive source details and label-mapping decisions in the project. Before reporting results, verify the data version and split logic used by the run. Do not publish results from data whose access terms or provenance are unclear.
