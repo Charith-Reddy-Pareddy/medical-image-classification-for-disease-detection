@@ -25,6 +25,16 @@ Do not commit radiographs, archives, patient or study identifiers, dataset expor
 
 Keep Kaggle credentials and other tokens outside the repository. Never add credential files, environment files, or copied secrets to a commit. If a credential is exposed, revoke it at its source.
 
+## Source review
+
+Reviewed 2026-11-04. Recheck source pages and terms when downloading; dataset pages and releases can change.
+
+- **Kaggle Chest X-Ray Images (Pneumonia):** The listing describes Normal and Pneumonia classes. Its description and linked Mendeley record identify CC BY 4.0. Record the exact download version and file checksums; do not assume counts or file layouts are identical across snapshots. [Kaggle listing](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia) · [Mendeley record, version 2](https://data.mendeley.com/datasets/rscbjbr9sj/2)
+- **NIH ChestX-ray14:** The NIH portal is the source. The original ChestX-ray8 paper describes labels mined from radiology reports, with multiple findings possible per image. The NIH download portal could not be checked during this review, so the current archive version, access terms, and label-file details remain unverified. Confirm them from the downloaded NIH documentation before use; do not infer that a missing Pneumonia label means a confirmed normal study. [NIH download portal](https://nihcc.app.box.com/v/ChestXray-NIHCC) · [Original paper](https://openaccess.thecvf.com/content_cvpr_2017/papers/Wang_ChestX-ray8_Hospital-Scale_Chest_CVPR_2017_paper.pdf)
+- **Indiana University/OpenI:** The NLM FAQ describes 7,470 chest X-rays and 3,955 reports, with image-report associations available in XML. NLM says reuse follows the applicable image license; the Indiana University images are distributed under CC BY-NC-ND 4.0, and the FAQ asks that the dataset not be shared outside the research group or organization. It also requests NLM attribution and citation. Validate the report-to-image links and the Pneumonia label mapping before evaluation. [OpenI FAQ](https://openi-vip.nlm.nih.gov/faq)
+
+No cross-dataset binary label mapping has been established yet. Keep each source's labels distinct until the mapping and ambiguous cases have been reviewed.
+
 ## Reproducibility
 
 Keep non-sensitive source details and label-mapping decisions in the project. Before reporting results, verify the data version and split logic used by the run. Do not publish results from data whose access terms or provenance are unclear.
