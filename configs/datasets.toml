@@ -1,0 +1,29 @@
+# Paths are relative to the repository root. Data files stay local.
+# The manifest records intended inputs; loaders are not wired to it yet.
+schema_version = 1
+data_root = "data"
+
+[datasets.kaggle]
+role = "train"
+image_dir = "data/kaggle/chest_xray"
+source_splits = ["train", "val", "test"]
+label_source = "class_directory"
+group_unit = "patient"
+group_key = "filename_patient_key"
+
+[datasets.nih]
+role = "external_validation"
+image_dir = "data/nih/images"
+metadata_file = "data/nih/Data_Entry_2017_v2020.csv"
+label_field = "Finding Labels"
+group_unit = "patient"
+group_key = "Patient ID"
+
+[datasets.openi]
+role = "external_validation"
+image_dir = "data/openi/images"
+reports_dir = "data/openi/reports/ecgen-radiology"
+image_element = "parentImage"
+label_source = "report_xml"
+group_unit = "report"
+group_key = "report_filename_stem"
