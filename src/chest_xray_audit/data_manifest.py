@@ -11,6 +11,7 @@ except ModuleNotFoundError:  # Python 3.10
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = ROOT / "configs" / "datasets.toml"
 _OPTIONAL_PATH_FIELDS = ("metadata_file", "reports_dir")
+_DATA_PATH_FIELDS = ("image_dir", *_OPTIONAL_PATH_FIELDS)
 _ROLES = {"train", "external_validation"}
 
 
@@ -76,6 +77,31 @@ def _check_relative_path(value: str, name: str) -> None:
     path = Path(value)
     if path.is_absolute() or ".." in path.parts:
         raise ManifestError(f"{name} must stay within the repository")
+
+
+def resolve_dataset_paths(
+    manifest: dict[str, Any],
+    *,
+    project_root: Path = ROOT,
+    data_root: Path | None = None,
+) -> dict[str, dict[str, Path]]:
+    """Resolve dataset paths relative to the manifest's or supplied data root."""
+    validate_dataset_manifest(manifest)
+
+    root = Path(project_root)
+    data_dir = Path(data_root) if data_root is not None else Path(manifest["data_root"])
+    if not data_dir.is_absolute():
+        data_dir = root / data_dir
+    data_dir = data_dir.resolve()
+
+    return {
+        name: {
+            field: (data_dir / dataset[field]).resolve()
+            for field in _DATA_PATH_FIELDS
+            if field in dataset
+        }
+        for name, dataset in manifest["datasets"].items()
+    }
 
 
 def load_dataset_manifest(path: Path = DEFAULT_MANIFEST) -> dict[str, Any]:
