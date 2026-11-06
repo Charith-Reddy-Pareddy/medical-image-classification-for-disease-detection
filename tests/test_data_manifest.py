@@ -2,6 +2,7 @@ import pytest
 
 from chest_xray_audit.data_manifest import (
     ManifestError,
+    find_missing_dataset_inputs,
     load_dataset_manifest,
     resolve_dataset_paths,
 )
@@ -33,6 +34,42 @@ def test_resolves_paths_under_custom_data_root(tmp_path):
     paths = resolve_dataset_paths(manifest, data_root=data_root)
 
     assert paths["openi"]["image_dir"] == (data_root / "openi/images").resolve()
+
+
+def test_finds_missing_dataset_inputs(tmp_path):
+    manifest = load_dataset_manifest()
+    (tmp_path / "data/nih/images").parent.mkdir(parents=True)
+    (tmp_path / "data/nih/images").touch()
+    (tmp_path / "data/nih/Data_Entry_2017_v2020.csv").mkdir()
+    (tmp_path / "data/openi/reports").mkdir(parents=True)
+    (tmp_path / "data/openi/reports/ecgen-radiology").touch()
+
+    missing = find_missing_dataset_inputs(manifest, project_root=tmp_path)
+
+    assert missing == [
+        tmp_path / "data/kaggle/chest_xray/train",
+        tmp_path / "data/kaggle/chest_xray/val",
+        tmp_path / "data/kaggle/chest_xray/test",
+        tmp_path / "data/nih/images",
+        tmp_path / "data/nih/Data_Entry_2017_v2020.csv",
+        tmp_path / "data/openi/images",
+        tmp_path / "data/openi/reports/ecgen-radiology",
+    ]
+
+
+def test_accepts_expected_dataset_input_types(tmp_path):
+    manifest = load_dataset_manifest()
+    root = tmp_path / "data"
+    for split in manifest["datasets"]["kaggle"]["source_splits"]:
+        (root / "kaggle/chest_xray" / split).mkdir(parents=True)
+    (root / "nih/images").mkdir(parents=True)
+    (root / "nih/Data_Entry_2017_v2020.csv").touch()
+    (root / "openi/images").mkdir(parents=True)
+    (root / "openi/reports/ecgen-radiology").mkdir(parents=True)
+
+    missing = find_missing_dataset_inputs(manifest, project_root=tmp_path)
+
+    assert missing == []
 
 
 def test_rejects_unsupported_schema_version(tmp_path):

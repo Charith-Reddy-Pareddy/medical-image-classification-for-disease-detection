@@ -104,6 +104,33 @@ def resolve_dataset_paths(
     }
 
 
+def find_missing_dataset_inputs(
+    manifest: dict[str, Any],
+    *,
+    project_root: Path = ROOT,
+    data_root: Path | None = None,
+) -> list[Path]:
+    """Return declared files or directories that are absent or the wrong type."""
+    dataset_paths = resolve_dataset_paths(manifest, project_root=project_root, data_root=data_root)
+    missing = []
+    for name, paths in dataset_paths.items():
+        for field in _DATA_PATH_FIELDS:
+            path = paths.get(field)
+            if path is None:
+                continue
+            if field == "image_dir" and "source_splits" in manifest["datasets"][name]:
+                missing.extend(
+                    path / split
+                    for split in manifest["datasets"][name]["source_splits"]
+                    if not (path / split).is_dir()
+                )
+                continue
+            present = path.is_file() if field == "metadata_file" else path.is_dir()
+            if not present:
+                missing.append(path)
+    return missing
+
+
 def load_dataset_manifest(path: Path = DEFAULT_MANIFEST) -> dict[str, Any]:
     """Load dataset definitions from a TOML file."""
     with path.open("rb") as stream:
