@@ -1,7 +1,14 @@
+from pathlib import Path
+
 import pytest
 
 from chest_xray_audit.data_manifest import load_dataset_manifest
-from chest_xray_audit.kaggle_index import DatasetLayoutError, build_kaggle_index
+from chest_xray_audit.kaggle_index import (
+    DatasetLayoutError,
+    ImageRecord,
+    build_kaggle_index,
+    find_patient_split_overlaps,
+)
 
 
 def _make_kaggle_tree(root):
@@ -31,3 +38,14 @@ def test_rejects_image_without_patient_key(tmp_path):
 
     with pytest.raises(DatasetLayoutError, match="patient ID"):
         build_kaggle_index(load_dataset_manifest(), project_root=tmp_path)
+
+
+def test_reports_patients_in_multiple_source_splits():
+    records = [
+        ImageRecord(Path("train/person12_1.jpeg"), 0, "train", "person12"),
+        ImageRecord(Path("train/person12_2.jpeg"), 1, "train", "person12"),
+        ImageRecord(Path("test/person12_3.jpeg"), 0, "test", "person12"),
+        ImageRecord(Path("val/person34_1.jpeg"), 1, "val", "person34"),
+    ]
+
+    assert find_patient_split_overlaps(records) == {"person12": ("test", "train")}

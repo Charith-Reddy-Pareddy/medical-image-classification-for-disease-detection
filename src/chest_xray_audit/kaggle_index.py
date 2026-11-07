@@ -1,6 +1,7 @@
 """Index the Kaggle chest X-ray folder structure without loading image pixels."""
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -73,3 +74,15 @@ def build_kaggle_index(
                     )
                 )
     return records
+
+
+def find_patient_split_overlaps(records: Iterable[ImageRecord]) -> dict[str, tuple[str, ...]]:
+    """Report patient IDs present in more than one original source split."""
+    patient_splits: dict[str, set[str]] = {}
+    for record in records:
+        patient_splits.setdefault(record.patient_id, set()).add(record.source_split)
+    return {
+        patient_id: tuple(sorted(splits))
+        for patient_id, splits in sorted(patient_splits.items())
+        if len(splits) > 1
+    }
