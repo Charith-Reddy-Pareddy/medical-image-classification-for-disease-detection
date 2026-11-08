@@ -8,6 +8,7 @@ from chest_xray_audit.kaggle_index import (
     ImageRecord,
     build_kaggle_index,
     find_patient_split_overlaps,
+    group_records_by_patient,
 )
 
 
@@ -49,3 +50,17 @@ def test_reports_patients_in_multiple_source_splits():
     ]
 
     assert find_patient_split_overlaps(records) == {"person12": ("test", "train")}
+
+
+def test_groups_all_patient_records_across_source_splits():
+    records = [
+        ImageRecord(Path("train/person12_1.jpeg"), 0, "train", "person12"),
+        ImageRecord(Path("test/person12_2.jpeg"), 1, "test", "person12"),
+        ImageRecord(Path("train/person34_1.jpeg"), 0, "train", "person34"),
+    ]
+
+    groups = group_records_by_patient(records)
+
+    assert list(groups) == ["person12", "person34"]
+    assert groups["person12"] == (records[0], records[1])
+    assert groups["person34"] == (records[2],)

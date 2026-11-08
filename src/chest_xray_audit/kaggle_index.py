@@ -86,3 +86,15 @@ def find_patient_split_overlaps(records: Iterable[ImageRecord]) -> dict[str, tup
         for patient_id, splits in sorted(patient_splits.items())
         if len(splits) > 1
     }
+
+
+def group_records_by_patient(
+    records: Iterable[ImageRecord],
+) -> dict[str, tuple[ImageRecord, ...]]:
+    """Keep each patient's image records together for later split assignment."""
+    groups: dict[str, list[ImageRecord]] = {}
+    for record in records:
+        if not record.patient_id:
+            raise DatasetLayoutError("patient_id is required for patient grouping")
+        groups.setdefault(record.patient_id, []).append(record)
+    return {patient_id: tuple(group) for patient_id, group in sorted(groups.items())}
