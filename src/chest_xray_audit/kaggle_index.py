@@ -108,13 +108,16 @@ def assign_patient_splits(
     ratios: Mapping[str, float] | None = None,
     *,
     seed: int = 42,
+    stratify_by_label: bool = False,
 ) -> dict[str, str]:
-    """Assign each patient once, using seeded shuffling and largest remainders."""
+    """Assign each patient once, optionally stratifying groups by label profile."""
     split_ratios = dict(_DEFAULT_SPLIT_RATIOS if ratios is None else ratios)
     if not split_ratios:
         raise ValueError("at least one split ratio is required")
     if not isinstance(seed, int) or isinstance(seed, bool):
         raise ValueError("seed must be an integer")
+    if not isinstance(stratify_by_label, bool):
+        raise ValueError("stratify_by_label must be a boolean")
 
     for split, ratio in split_ratios.items():
         if not isinstance(split, str) or not split.strip():
@@ -126,12 +129,33 @@ def assign_patient_splits(
     if not math.isclose(sum(split_ratios.values()), 1.0, rel_tol=0, abs_tol=1e-9):
         raise ValueError("split ratios must sum to 1")
 
-    patient_ids = list(group_records_by_patient(records))
-    if not patient_ids:
+    groups = group_records_by_patient(records)
+    if not groups:
         return {}
-    random.Random(seed).shuffle(patient_ids)
 
-    targets = [len(patient_ids) * ratio for ratio in split_ratios.values()]
+    rng = random.Random(seed)
+    if stratify_by_label:
+        strata: dict[tuple[int, ...], list[str]] = {}
+        for patient_id, group in groups.items():
+            labels = tuple(sorted({record.label for record in group}))
+            if not labels or any(label not in (0, 1) for label in labels):
+                raise ValueError("label stratification requires binary labels")
+            strata.setdefault(labels, []).append(patient_id)
+        assignments = {}
+        for labels in sorted(strata):
+            assignments.update(_assign_patient_ids(strata[labels], split_ratios, rng))
+        return dict(sorted(assignments.items()))
+
+    return _assign_patient_ids(list(groups), split_ratios, rng)
+
+
+def _assign_patient_ids(
+    patient_ids: list[str],
+    ratios: Mapping[str, float],
+    rng: random.Random,
+) -> dict[str, str]:
+    rng.shuffle(patient_ids)
+    targets = [len(patient_ids) * ratio for ratio in ratios.values()]
     counts = [math.floor(target) for target in targets]
     remainder_order = sorted(
         range(len(targets)),
@@ -142,8 +166,8 @@ def assign_patient_splits(
 
     assignments = {}
     start = 0
-    for (split, _ratio), count in zip(split_ratios.items(), counts):
+    for (split, _ratio), count in zip(ratios.items(), counts):
         for patient_id in patient_ids[start : start + count]:
             assignments[patient_id] = split
         start += count
-    return dict(sorted(assignments.items()))
+    return assignments

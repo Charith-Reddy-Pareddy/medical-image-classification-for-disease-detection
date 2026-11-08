@@ -88,3 +88,31 @@ def test_assigns_patient_groups_deterministically_and_by_ratio():
         "val": 1,
         "test": 1,
     }
+
+
+def test_stratified_split_keeps_patient_groups_together_and_balances_labels():
+    records = [
+        ImageRecord(Path(f"{label}/person{label}{n}.jpeg"), label, "train", f"person{label}{n}")
+        for label in (0, 1)
+        for n in range(12)
+    ]
+    records.extend(
+        [
+            ImageRecord(Path("train/person-mixed-normal.jpeg"), 0, "train", "person-mixed"),
+            ImageRecord(Path("test/person-mixed-pneumonia.jpeg"), 1, "test", "person-mixed"),
+        ]
+    )
+    ratios = {"train": 0.5, "val": 0.25, "test": 0.25}
+
+    assigned = assign_patient_splits(records, ratios, seed=21, stratify_by_label=True)
+
+    assert assigned == assign_patient_splits(
+        list(reversed(records)), ratios, seed=21, stratify_by_label=True
+    )
+    for label in (0, 1):
+        counts = {
+            split: sum(assigned[f"person{label}{n}"] == split for n in range(12))
+            for split in ratios
+        }
+        assert counts == {"train": 6, "val": 3, "test": 3}
+    assert assigned["person-mixed"] in ratios
