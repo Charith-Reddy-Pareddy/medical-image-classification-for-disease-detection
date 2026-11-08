@@ -1,7 +1,9 @@
 """Index the Kaggle chest X-ray folder structure without loading image pixels."""
 
+import math
+import random
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -16,6 +18,7 @@ from chest_xray_audit.data_manifest import (
 _LABELS = {"NORMAL": 0, "PNEUMONIA": 1}
 _IMAGE_SUFFIXES = {".jpeg", ".jpg", ".png"}
 _PATIENT_ID = re.compile(r"^(person\d+)_", re.IGNORECASE)
+_DEFAULT_SPLIT_RATIOS = {"train": 0.7, "val": 0.15, "test": 0.15}
 
 
 class DatasetLayoutError(ValueError):
@@ -98,3 +101,49 @@ def group_records_by_patient(
             raise DatasetLayoutError("patient_id is required for patient grouping")
         groups.setdefault(record.patient_id, []).append(record)
     return {patient_id: tuple(group) for patient_id, group in sorted(groups.items())}
+
+
+def assign_patient_splits(
+    records: Iterable[ImageRecord],
+    ratios: Mapping[str, float] | None = None,
+    *,
+    seed: int = 42,
+) -> dict[str, str]:
+    """Assign each patient once, using seeded shuffling and largest remainders."""
+    split_ratios = dict(_DEFAULT_SPLIT_RATIOS if ratios is None else ratios)
+    if not split_ratios:
+        raise ValueError("at least one split ratio is required")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        raise ValueError("seed must be an integer")
+
+    for split, ratio in split_ratios.items():
+        if not isinstance(split, str) or not split.strip():
+            raise ValueError("split names must be non-empty strings")
+        if isinstance(ratio, bool) or not isinstance(ratio, (int, float)):
+            raise ValueError("split ratios must be numbers")
+        if not math.isfinite(ratio) or ratio < 0:
+            raise ValueError("split ratios must be finite and non-negative")
+    if not math.isclose(sum(split_ratios.values()), 1.0, rel_tol=0, abs_tol=1e-9):
+        raise ValueError("split ratios must sum to 1")
+
+    patient_ids = list(group_records_by_patient(records))
+    if not patient_ids:
+        return {}
+    random.Random(seed).shuffle(patient_ids)
+
+    targets = [len(patient_ids) * ratio for ratio in split_ratios.values()]
+    counts = [math.floor(target) for target in targets]
+    remainder_order = sorted(
+        range(len(targets)),
+        key=lambda index: (-(targets[index] - counts[index]), index),
+    )
+    for index in remainder_order[: len(patient_ids) - sum(counts)]:
+        counts[index] += 1
+
+    assignments = {}
+    start = 0
+    for (split, _ratio), count in zip(split_ratios.items(), counts):
+        for patient_id in patient_ids[start : start + count]:
+            assignments[patient_id] = split
+        start += count
+    return dict(sorted(assignments.items()))

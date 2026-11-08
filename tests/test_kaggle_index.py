@@ -6,6 +6,7 @@ from chest_xray_audit.data_manifest import load_dataset_manifest
 from chest_xray_audit.kaggle_index import (
     DatasetLayoutError,
     ImageRecord,
+    assign_patient_splits,
     build_kaggle_index,
     find_patient_split_overlaps,
     group_records_by_patient,
@@ -64,3 +65,26 @@ def test_groups_all_patient_records_across_source_splits():
     assert list(groups) == ["person12", "person34"]
     assert groups["person12"] == (records[0], records[1])
     assert groups["person34"] == (records[2],)
+
+
+def test_assigns_patient_groups_deterministically_and_by_ratio():
+    records = [
+        ImageRecord(Path("train/person1_a.jpeg"), 0, "train", "person1"),
+        ImageRecord(Path("test/person1_b.jpeg"), 1, "test", "person1"),
+        *(
+            ImageRecord(Path(f"train/person{n}_a.jpeg"), n % 2, "train", f"person{n}")
+            for n in range(2, 6)
+        ),
+    ]
+    ratios = {"train": 0.6, "val": 0.2, "test": 0.2}
+
+    assigned = assign_patient_splits(records, ratios, seed=17)
+
+    assert assigned == assign_patient_splits(list(reversed(records)), ratios, seed=17)
+    assert set(assigned) == {f"person{n}" for n in range(1, 6)}
+    assert assigned["person1"] in ratios
+    assert {split: list(assigned.values()).count(split) for split in ratios} == {
+        "train": 3,
+        "val": 1,
+        "test": 1,
+    }
