@@ -170,8 +170,6 @@ def assign_records_to_splits(
         for record in record_list
     ]
 
-
-
 def summarize_assigned_splits(
     records: Iterable[ImageRecord],
 ) -> dict[str, dict[str, Any]]:
@@ -183,6 +181,8 @@ def summarize_assigned_splits(
         split = record.assigned_split
         if not split:
             raise DatasetLayoutError("assigned_split is required to summarize records")
+        if not record.patient_id:
+            raise DatasetLayoutError("patient_id is required to summarize records")
 
         previous = patient_splits.setdefault(record.patient_id, split)
         if previous != split:
