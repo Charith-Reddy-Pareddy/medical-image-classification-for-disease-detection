@@ -2,6 +2,7 @@
 
 import math
 import random
+from dataclasses import replace
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ class ImageRecord:
     label: int
     source_split: str
     patient_id: str
+    assigned_split: str | None = None
 
 
 def build_kaggle_index(
@@ -147,6 +149,28 @@ def assign_patient_splits(
         return dict(sorted(assignments.items()))
 
     return _assign_patient_ids(list(groups), split_ratios, rng)
+
+
+
+def assign_records_to_splits(
+    records: Iterable[ImageRecord],
+    ratios: Mapping[str, float] | None = None,
+    *,
+    seed: int = 42,
+    stratify_by_label: bool = False,
+) -> list[ImageRecord]:
+    """Return records with patient-level assignments and original source splits intact."""
+    record_list = list(records)
+    assignments = assign_patient_splits(
+        record_list,
+        ratios,
+        seed=seed,
+        stratify_by_label=stratify_by_label,
+    )
+    return [
+        replace(record, assigned_split=assignments[record.patient_id])
+        for record in record_list
+    ]
 
 
 def _assign_patient_ids(
