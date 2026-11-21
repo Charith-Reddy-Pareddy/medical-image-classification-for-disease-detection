@@ -2,10 +2,9 @@
 
 import math
 import random
-from dataclasses import replace
 import re
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -151,7 +150,6 @@ def assign_patient_splits(
     return _assign_patient_ids(list(groups), split_ratios, rng)
 
 
-
 def assign_records_to_splits(
     records: Iterable[ImageRecord],
     ratios: Mapping[str, float] | None = None,
@@ -195,3 +193,4 @@ def _assign_patient_ids(
             assignments[patient_id] = split
         start += count
     return assignments
+
