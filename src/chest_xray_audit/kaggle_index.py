@@ -171,6 +171,44 @@ def assign_records_to_splits(
     ]
 
 
+
+def summarize_assigned_splits(
+    records: Iterable[ImageRecord],
+) -> dict[str, dict[str, Any]]:
+    """Count images, patients, and labels in each assigned split."""
+    counts: dict[str, dict[str, Any]] = {}
+    patient_splits: dict[str, str] = {}
+
+    for record in records:
+        split = record.assigned_split
+        if not split:
+            raise DatasetLayoutError("assigned_split is required to summarize records")
+
+        previous = patient_splits.setdefault(record.patient_id, split)
+        if previous != split:
+            raise DatasetLayoutError(
+                f"Patient leakage across assigned splits: {record.patient_id}"
+            )
+
+        split_counts = counts.setdefault(
+            split,
+            {"images": 0, "patients": set(), "labels": {}},
+        )
+        split_counts["images"] += 1
+        split_counts["patients"].add(record.patient_id)
+        labels = split_counts["labels"]
+        labels[record.label] = labels.get(record.label, 0) + 1
+
+    return {
+        split: {
+            "images": split_counts["images"],
+            "patients": len(split_counts["patients"]),
+            "labels": dict(sorted(split_counts["labels"].items())),
+        }
+        for split, split_counts in sorted(counts.items())
+    }
+
+
 def _assign_patient_ids(
     patient_ids: list[str],
     ratios: Mapping[str, float],
