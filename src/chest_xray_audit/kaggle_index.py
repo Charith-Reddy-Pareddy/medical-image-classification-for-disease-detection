@@ -170,6 +170,8 @@ def assign_records_to_splits(
         for record in record_list
     ]
 
+
+
 def summarize_assigned_splits(
     records: Iterable[ImageRecord],
 ) -> dict[str, dict[str, Any]]:
