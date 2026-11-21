@@ -10,8 +10,10 @@ from chest_xray_audit.data_manifest import (
 )
 from chest_xray_audit.kaggle_index import (
     DatasetLayoutError,
+    assign_records_to_splits,
     build_kaggle_index,
     find_patient_split_overlaps,
+    summarize_assigned_splits,
 )
 
 
@@ -31,6 +33,8 @@ def main(argv: list[str] | None = None) -> int:
     print("All dataset inputs are present.")
     try:
         records = build_kaggle_index(manifest, data_root=args.data_root)
+        assigned = assign_records_to_splits(records, stratify_by_label=True)
+        summary = summarize_assigned_splits(assigned)
     except (DatasetLayoutError, FileNotFoundError, ManifestError) as exc:
         print(f"Could not index Kaggle images: {exc}")
         return 1
@@ -39,6 +43,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Indexed {len(records)} Kaggle images.")
     if overlaps:
         print(f"Patients in multiple source splits: {len(overlaps)}")
+
+    print("Assigned patient-level splits:")
+    for split in ("train", "val", "test"):
+        counts = summary.get(split, {})
+        labels = counts.get("labels", {})
+        print(
+            f"  {split}: {counts.get('patients', 0)} patients, "
+            f"{counts.get('images', 0)} images "
+            f"(NORMAL={labels.get(0, 0)}, PNEUMONIA={labels.get(1, 0)})"
+        )
     return 0
 
 
