@@ -76,7 +76,6 @@ def validate_dataset_manifest(manifest: Any) -> None:
             )
 
 
-
 def _validate_patient_split_config(manifest: dict[str, Any]) -> None:
     if "patient_split" not in manifest:
         return
@@ -89,7 +88,7 @@ def _validate_patient_split_config(manifest: dict[str, Any]) -> None:
     if not isinstance(ratios, dict) or set(ratios) != _SPLITS:
         raise ManifestError("patient_split.ratios must define train, val, and test")
 
-    for split, ratio in ratios.items():
+    for ratio in ratios.values():
         if (
             isinstance(ratio, bool)
             or not isinstance(ratio, (int, float))
