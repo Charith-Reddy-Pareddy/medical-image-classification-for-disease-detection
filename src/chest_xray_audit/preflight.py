@@ -33,7 +33,13 @@ def main(argv: list[str] | None = None) -> int:
     print("All dataset inputs are present.")
     try:
         records = build_kaggle_index(manifest, data_root=args.data_root)
-        assigned = assign_records_to_splits(records, stratify_by_label=True)
+        split_config = manifest.get("patient_split", {})
+        assigned = assign_records_to_splits(
+            records,
+            ratios=split_config.get("ratios"),
+            seed=split_config.get("seed", 42),
+            stratify_by_label=split_config.get("stratify_by_label", True),
+        )
         summary = summarize_assigned_splits(assigned)
     except (DatasetLayoutError, FileNotFoundError, ManifestError) as exc:
         print(f"Could not index Kaggle images: {exc}")
