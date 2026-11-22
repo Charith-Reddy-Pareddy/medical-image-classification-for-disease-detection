@@ -1,5 +1,6 @@
 """Read the repository's dataset manifest."""
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ DEFAULT_MANIFEST = ROOT / "configs" / "datasets.toml"
 _OPTIONAL_PATH_FIELDS = ("metadata_file", "reports_dir")
 _DATA_PATH_FIELDS = ("image_dir", *_OPTIONAL_PATH_FIELDS)
 _ROLES = {"train", "external_validation"}
+_SPLITS = {"train", "val", "test"}
 
 
 class ManifestError(ValueError):
@@ -37,6 +39,7 @@ def validate_dataset_manifest(manifest: Any) -> None:
 
     data_root = _require_text(manifest, "data_root", "manifest")
     _check_relative_path(data_root, "manifest.data_root")
+    _validate_patient_split_config(manifest)
 
     datasets = manifest.get("datasets")
     if not isinstance(datasets, dict) or not datasets:
@@ -71,6 +74,38 @@ def validate_dataset_manifest(manifest: Any) -> None:
             raise ManifestError(
                 f"datasets.{name}.source_splits must be a non-empty list of strings"
             )
+
+
+
+def _validate_patient_split_config(manifest: dict[str, Any]) -> None:
+    if "patient_split" not in manifest:
+        return
+
+    config = manifest["patient_split"]
+    if not isinstance(config, dict):
+        raise ManifestError("patient_split must be a table")
+
+    ratios = config.get("ratios")
+    if not isinstance(ratios, dict) or set(ratios) != _SPLITS:
+        raise ManifestError("patient_split.ratios must define train, val, and test")
+
+    for split, ratio in ratios.items():
+        if (
+            isinstance(ratio, bool)
+            or not isinstance(ratio, (int, float))
+            or not math.isfinite(ratio)
+            or ratio < 0
+        ):
+            raise ManifestError("patient_split ratios must be finite non-negative numbers")
+    if not math.isclose(sum(ratios.values()), 1.0, rel_tol=0, abs_tol=1e-9):
+        raise ManifestError("patient_split ratios must sum to 1")
+
+    seed = config.get("seed")
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise ManifestError("patient_split.seed must be an integer")
+
+    if not isinstance(config.get("stratify_by_label"), bool):
+        raise ManifestError("patient_split.stratify_by_label must be a boolean")
 
 
 def _check_relative_path(value: str, name: str) -> None:

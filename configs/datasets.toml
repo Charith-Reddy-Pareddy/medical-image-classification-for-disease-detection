@@ -3,6 +3,11 @@
 schema_version = 1
 data_root = "data"
 
+[patient_split]
+ratios = { train = 0.7, val = 0.15, test = 0.15 }
+seed = 42
+stratify_by_label = true
+
 [datasets.kaggle]
 role = "train"
 image_dir = "kaggle/chest_xray"

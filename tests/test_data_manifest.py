@@ -91,3 +91,18 @@ def test_rejects_dataset_path_outside_repository(tmp_path):
 
     with pytest.raises(ManifestError, match="within the repository"):
         load_dataset_manifest(path)
+
+
+def test_rejects_patient_split_ratios_that_do_not_sum_to_one(tmp_path):
+    path = tmp_path / "datasets.toml"
+    path.write_text(
+        'schema_version = 1\ndata_root = "data"\n'
+        '[patient_split]\nseed = 42\nstratify_by_label = true\n'
+        '[patient_split.ratios]\ntrain = 0.7\nval = 0.2\ntest = 0.2\n'
+        '[datasets.sample]\nrole = "train"\nimage_dir = "images"\n'
+        'group_unit = "patient"\ngroup_key = "patient_id"\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ManifestError, match="ratios must sum to 1"):
+        load_dataset_manifest(path)
