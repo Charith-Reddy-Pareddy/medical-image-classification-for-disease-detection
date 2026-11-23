@@ -34,11 +34,14 @@ def main(argv: list[str] | None = None) -> int:
     try:
         records = build_kaggle_index(manifest, data_root=args.data_root)
         split_config = manifest.get("patient_split", {})
+        ratios = split_config.get("ratios", {"train": 0.7, "val": 0.15, "test": 0.15})
+        seed = split_config.get("seed", 42)
+        stratify = split_config.get("stratify_by_label", True)
         assigned = assign_records_to_splits(
             records,
-            ratios=split_config.get("ratios"),
-            seed=split_config.get("seed", 42),
-            stratify_by_label=split_config.get("stratify_by_label", True),
+            ratios=ratios,
+            seed=seed,
+            stratify_by_label=stratify,
         )
         summary = summarize_assigned_splits(assigned)
     except (DatasetLayoutError, FileNotFoundError, ManifestError) as exc:
@@ -50,6 +53,11 @@ def main(argv: list[str] | None = None) -> int:
     if overlaps:
         print(f"Patients in multiple source splits: {len(overlaps)}")
 
+    ratio_text = ", ".join(f"{split}={ratios[split]:g}" for split in ("train", "val", "test"))
+    print(
+        f"Patient split settings: seed={seed}, stratify_by_label={stratify}, "
+        f"ratios={ratio_text}"
+    )
     print("Assigned patient-level splits:")
     for split in ("train", "val", "test"):
         counts = summary.get(split, {})

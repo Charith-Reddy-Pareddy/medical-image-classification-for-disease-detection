@@ -29,6 +29,8 @@ def test_cli_succeeds_when_inputs_exist(tmp_path, capsys):
         "All dataset inputs are present.\n"
         "Indexed 2 Kaggle images.\n"
         "Patients in multiple source splits: 1\n"
+        "Patient split settings: seed=42, stratify_by_label=True, "
+        "ratios=train=0.7, val=0.15, test=0.15\n"
         "Assigned patient-level splits:\n"
         "  train: 1 patients, 2 images (NORMAL=1, PNEUMONIA=1)\n"
         "  val: 0 patients, 0 images (NORMAL=0, PNEUMONIA=0)\n"
