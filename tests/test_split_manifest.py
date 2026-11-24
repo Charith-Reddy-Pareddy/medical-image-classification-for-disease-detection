@@ -1,8 +1,6 @@
 import csv
 from pathlib import Path
 
-import pytest
-
 from chest_xray_audit.kaggle_index import DatasetLayoutError, ImageRecord
 from chest_xray_audit.split_manifest import write_patient_split_manifest
 
