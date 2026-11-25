@@ -15,11 +15,17 @@ from chest_xray_audit.kaggle_index import (
     find_patient_split_overlaps,
     summarize_assigned_splits,
 )
+from chest_xray_audit.split_manifest import write_patient_split_manifest
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check local dataset paths from the manifest")
     parser.add_argument("--data-root", type=Path, help="Override the manifest's data directory")
+    parser.add_argument(
+        "--split-manifest",
+        type=Path,
+        help="Write patient-level assignments to a CSV file",
+    )
     args = parser.parse_args(argv)
 
     manifest = load_dataset_manifest()
@@ -67,6 +73,14 @@ def main(argv: list[str] | None = None) -> int:
             f"{counts.get('images', 0)} images "
             f"(NORMAL={labels.get(0, 0)}, PNEUMONIA={labels.get(1, 0)})"
         )
+
+    if args.split_manifest is not None:
+        try:
+            output_path = write_patient_split_manifest(assigned, args.split_manifest)
+        except (DatasetLayoutError, OSError) as exc:
+            print(f"Could not write patient split manifest: {exc}")
+            return 1
+        print(f"Wrote patient split manifest: {output_path}")
     return 0
 
 

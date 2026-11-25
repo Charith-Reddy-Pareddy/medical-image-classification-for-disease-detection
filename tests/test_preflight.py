@@ -1,3 +1,6 @@
+import csv
+from pathlib import Path
+
 from chest_xray_audit.preflight import main
 
 
@@ -81,3 +84,38 @@ def test_cli_uses_manifest_patient_split_settings(tmp_path, capsys, monkeypatch)
     assert result == 0
     assert passed == settings
     assert "  val: 2 patients, 2 images (NORMAL=1, PNEUMONIA=1)" in capsys.readouterr().out
+
+
+def test_cli_writes_patient_split_manifest(tmp_path, capsys):
+    data_root = tmp_path / "datasets"
+    for split in ("train", "val", "test"):
+        for label in ("NORMAL", "PNEUMONIA"):
+            (data_root / "kaggle/chest_xray" / split / label).mkdir(parents=True)
+    (data_root / "nih/images").mkdir(parents=True)
+    (data_root / "nih/Data_Entry_2017_v2020.csv").touch()
+    (data_root / "openi/images").mkdir(parents=True)
+    (data_root / "openi/reports/ecgen-radiology").mkdir(parents=True)
+    (data_root / "kaggle/chest_xray/train/NORMAL/person12_1.jpeg").touch()
+    (data_root / "kaggle/chest_xray/test/PNEUMONIA/person12_bacteria_2.jpeg").touch()
+    output_path = tmp_path / "reports/splits.csv"
+
+    result = main(
+        [
+            "--data-root",
+            str(data_root),
+            "--split-manifest",
+            str(output_path),
+        ]
+    )
+
+    assert result == 0
+    with output_path.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    assert {row["patient_id"] for row in rows} == {"person12"}
+    assert {row["assigned_split"] for row in rows} == {"train"}
+    assert {row["image_path"] for row in rows} == {
+        "train/NORMAL/person12_1.jpeg",
+        "test/PNEUMONIA/person12_bacteria_2.jpeg",
+    }
+    assert str(tmp_path) not in output_path.read_text(encoding="utf-8")
+    assert f"Wrote patient split manifest: {output_path}" in capsys.readouterr().out
