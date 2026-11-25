@@ -4,7 +4,10 @@ from pathlib import Path
 import pytest
 
 from chest_xray_audit.kaggle_index import DatasetLayoutError, ImageRecord
-from chest_xray_audit.split_manifest import write_patient_split_manifest
+from chest_xray_audit.split_manifest import (
+    read_patient_split_manifest,
+    write_patient_split_manifest,
+)
 
 
 def test_writes_patient_split_csv_with_relative_image_paths(tmp_path):
@@ -49,3 +52,24 @@ def test_invalid_record_does_not_replace_existing_manifest(tmp_path):
 
     assert output_path.read_text(encoding="utf-8") == "previous manifest"
     assert not list(tmp_path.glob(".splits.csv.*.tmp"))
+
+
+def test_reads_split_manifest_with_required_columns(tmp_path):
+    path = tmp_path / "splits.csv"
+    path.write_text(
+        "image_path,patient_id,label,source_split,assigned_split\n"
+        "train/NORMAL/person12.jpeg,person12,0,train,train\n",
+        encoding="utf-8",
+    )
+
+    rows = read_patient_split_manifest(path)
+
+    assert rows == [
+        {
+            "image_path": "train/NORMAL/person12.jpeg",
+            "patient_id": "person12",
+            "label": "0",
+            "source_split": "train",
+            "assigned_split": "train",
+        }
+    ]

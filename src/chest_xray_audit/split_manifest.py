@@ -77,3 +77,27 @@ def write_patient_split_manifest(
             temporary_path.unlink(missing_ok=True)
 
     return output_path
+
+
+def read_patient_split_manifest(
+    input_path: Path,
+) -> list[dict[str, str | None]]:
+    """Read CSV rows after checking the required split manifest columns."""
+    with Path(input_path).open("r", encoding="utf-8", newline="") as stream:
+        reader = csv.DictReader(stream)
+        fieldnames = reader.fieldnames
+        if fieldnames is None:
+            raise DatasetLayoutError("Split manifest must include a header row")
+        if len(fieldnames) != len(set(fieldnames)):
+            raise DatasetLayoutError("Split manifest columns must be unique")
+
+        missing = sorted(set(_COLUMNS) - set(fieldnames))
+        if missing:
+            raise DatasetLayoutError(
+                f"Split manifest is missing columns: {', '.join(missing)}"
+            )
+
+        return [
+            {column: row.get(column) for column in _COLUMNS}
+            for row in reader
+        ]
