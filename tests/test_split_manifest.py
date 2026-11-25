@@ -1,6 +1,8 @@
 import csv
 from pathlib import Path
 
+import pytest
+
 from chest_xray_audit.kaggle_index import DatasetLayoutError, ImageRecord
 from chest_xray_audit.split_manifest import write_patient_split_manifest
 
@@ -32,3 +34,18 @@ def test_writes_patient_split_csv_with_relative_image_paths(tmp_path):
         "train"
     }
     assert all(not Path(row["image_path"]).is_absolute() for row in rows)
+
+
+def test_invalid_record_does_not_replace_existing_manifest(tmp_path):
+    output_path = tmp_path / "splits.csv"
+    output_path.write_text("previous manifest", encoding="utf-8")
+    records = [
+        ImageRecord(tmp_path / "train/person12.jpeg", 0, "train", "person12", "train"),
+        ImageRecord(tmp_path / "test/person34.jpeg", 2, "test", "person34", "test"),
+    ]
+
+    with pytest.raises(DatasetLayoutError, match="Unsupported Kaggle label"):
+        write_patient_split_manifest(records, output_path)
+
+    assert output_path.read_text(encoding="utf-8") == "previous manifest"
+    assert not list(tmp_path.glob(".splits.csv.*.tmp"))
