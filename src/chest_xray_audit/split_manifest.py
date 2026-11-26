@@ -79,10 +79,11 @@ def write_patient_split_manifest(
     return output_path
 
 
+
 def read_patient_split_manifest(
     input_path: Path,
-) -> list[dict[str, str | None]]:
-    """Read CSV rows after checking the required split manifest columns."""
+) -> list[dict[str, str]]:
+    """Read CSV rows and validate their patient-level split assignments."""
     with Path(input_path).open("r", encoding="utf-8", newline="") as stream:
         reader = csv.DictReader(stream)
         fieldnames = reader.fieldnames
@@ -97,7 +98,67 @@ def read_patient_split_manifest(
                 f"Split manifest is missing columns: {', '.join(missing)}"
             )
 
-        return [
-            {column: row.get(column) for column in _COLUMNS}
-            for row in reader
-        ]
+        rows = []
+        patient_splits = {}
+        image_paths = set()
+        for line_num, row in enumerate(reader, start=2):
+            if None in row:
+                raise DatasetLayoutError(
+                    f"Split manifest row {line_num} has extra values"
+                )
+
+            record = {column: row.get(column) for column in _COLUMNS}
+            if any(value is None or not value.strip() for value in record.values()):
+                raise DatasetLayoutError(
+                    f"Split manifest row {line_num} has empty required values"
+                )
+
+            image_path = record["image_path"]
+            patient_id = record["patient_id"]
+            label = record["label"]
+            source_split = record["source_split"]
+            assigned_split = record["assigned_split"]
+
+            if source_split not in {"train", "val", "test"}:
+                raise DatasetLayoutError(
+                    f"Split manifest row {line_num} has an invalid source split"
+                )
+            if assigned_split not in {"train", "val", "test"}:
+                raise DatasetLayoutError(
+                    f"Split manifest row {line_num} has an invalid assigned split"
+                )
+            if label not in {"0", "1"}:
+                raise DatasetLayoutError(
+                    f"Split manifest row {line_num} has an invalid label"
+                )
+
+            path = PurePosixPath(image_path)
+            parts = path.parts
+            label_dir = _LABEL_DIRS[int(label)]
+            if (
+                "\\" in image_path
+                or path.is_absolute()
+                or path.as_posix() != image_path
+                or len(parts) != 3
+                or any(part in {".", ".."} for part in parts)
+                or parts[0] != source_split
+                or parts[1] != label_dir
+                or path.suffix.lower() not in {".jpeg", ".jpg", ".png"}
+            ):
+                raise DatasetLayoutError(
+                    f"Split manifest row {line_num} has an invalid relative image path"
+                )
+            if image_path in image_paths:
+                raise DatasetLayoutError(
+                    f"Split manifest row {line_num} repeats an image path"
+                )
+            image_paths.add(image_path)
+
+            previous = patient_splits.setdefault(patient_id, assigned_split)
+            if previous != assigned_split:
+                raise DatasetLayoutError(
+                    f"Patient leakage across assigned splits: {patient_id}"
+                )
+            rows.append(record)
+
+        return rows

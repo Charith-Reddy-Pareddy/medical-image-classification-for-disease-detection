@@ -73,3 +73,28 @@ def test_reads_split_manifest_with_required_columns(tmp_path):
             "assigned_split": "train",
         }
     ]
+
+
+def test_reader_rejects_path_traversal(tmp_path):
+    path = tmp_path / "unsafe.csv"
+    path.write_text(
+        "image_path,patient_id,label,source_split,assigned_split\n"
+        "../data/train/NORMAL/person12.jpeg,person12,0,train,train\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DatasetLayoutError, match="invalid relative image path"):
+        read_patient_split_manifest(path)
+
+
+def test_reader_rejects_patient_leakage(tmp_path):
+    path = tmp_path / "leakage.csv"
+    path.write_text(
+        "image_path,patient_id,label,source_split,assigned_split\n"
+        "train/NORMAL/person12_1.jpeg,person12,0,train,train\n"
+        "test/PNEUMONIA/person12_2.jpeg,person12,1,test,val\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DatasetLayoutError, match="Patient leakage"):
+        read_patient_split_manifest(path)
