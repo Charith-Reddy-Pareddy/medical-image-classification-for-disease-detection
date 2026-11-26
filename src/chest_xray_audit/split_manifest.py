@@ -79,7 +79,6 @@ def write_patient_split_manifest(
     return output_path
 
 
-
 def read_patient_split_manifest(
     input_path: Path,
 ) -> list[dict[str, str]]:
