@@ -98,3 +98,15 @@ def test_reader_rejects_patient_leakage(tmp_path):
 
     with pytest.raises(DatasetLayoutError, match="Patient leakage"):
         read_patient_split_manifest(path)
+
+
+def test_reader_rejects_missing_image_under_root(tmp_path):
+    path = tmp_path / "splits.csv"
+    path.write_text(
+        "image_path,patient_id,label,source_split,assigned_split\n"
+        "train/NORMAL/person12.jpeg,person12,0,train,train\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DatasetLayoutError, match="image file not found"):
+        read_patient_split_manifest(path, image_root=tmp_path / "images")

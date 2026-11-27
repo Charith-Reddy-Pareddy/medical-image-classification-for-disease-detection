@@ -81,8 +81,11 @@ def write_patient_split_manifest(
 
 def read_patient_split_manifest(
     input_path: Path,
+    *,
+    image_root: Path | None = None,
 ) -> list[dict[str, str]]:
-    """Read CSV rows and validate their patient-level split assignments."""
+    """Read and validate rows, optionally checking image files under a root."""
+    root = Path(image_root).resolve() if image_root is not None else None
     with Path(input_path).open("r", encoding="utf-8", newline="") as stream:
         reader = csv.DictReader(stream)
         fieldnames = reader.fieldnames
@@ -147,6 +150,17 @@ def read_patient_split_manifest(
                 raise DatasetLayoutError(
                     f"Split manifest row {line_num} has an invalid relative image path"
                 )
+            if root is not None:
+                resolved_path = (root / Path(*parts)).resolve()
+                if not resolved_path.is_relative_to(root):
+                    raise DatasetLayoutError(
+                        f"Split manifest row {line_num} image path escapes image root"
+                    )
+                if not resolved_path.is_file():
+                    raise DatasetLayoutError(
+                        f"Split manifest row {line_num} image file not found under image root"
+                    )
+
             if image_path in image_paths:
                 raise DatasetLayoutError(
                     f"Split manifest row {line_num} repeats an image path"
