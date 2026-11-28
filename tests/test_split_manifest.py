@@ -5,6 +5,7 @@ import pytest
 
 from chest_xray_audit.kaggle_index import DatasetLayoutError, ImageRecord
 from chest_xray_audit.split_manifest import (
+    load_patient_split_records,
     read_patient_split_manifest,
     write_patient_split_manifest,
 )
@@ -110,3 +111,22 @@ def test_reader_rejects_missing_image_under_root(tmp_path):
 
     with pytest.raises(DatasetLayoutError, match="image file not found"):
         read_patient_split_manifest(path, image_root=tmp_path / "images")
+
+
+def test_loads_split_records_with_paths_under_image_root(tmp_path):
+    image_root = tmp_path / "images"
+    image_path = image_root / "train/NORMAL/person12.jpeg"
+    image_path.parent.mkdir(parents=True)
+    image_path.touch()
+    path = tmp_path / "splits.csv"
+    path.write_text(
+        "image_path,patient_id,label,source_split,assigned_split\n"
+        "train/NORMAL/person12.jpeg,person12,0,train,val\n",
+        encoding="utf-8",
+    )
+
+    records = load_patient_split_records(path, image_root=image_root)
+
+    assert records == [
+        ImageRecord(image_path.resolve(), 0, "train", "person12", "val")
+    ]

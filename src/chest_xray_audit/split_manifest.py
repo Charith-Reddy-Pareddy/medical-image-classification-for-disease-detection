@@ -175,3 +175,23 @@ def read_patient_split_manifest(
             rows.append(record)
 
         return rows
+
+
+def load_patient_split_records(
+    input_path: Path,
+    *,
+    image_root: Path,
+) -> list[ImageRecord]:
+    """Load validated patient assignments as image records."""
+    root = Path(image_root).resolve()
+    rows = read_patient_split_manifest(input_path, image_root=root)
+    return [
+        ImageRecord(
+            path=(root / Path(*PurePosixPath(row["image_path"]).parts)).resolve(),
+            label=int(row["label"]),
+            source_split=row["source_split"],
+            patient_id=row["patient_id"],
+            assigned_split=row["assigned_split"],
+        )
+        for row in rows
+    ]
